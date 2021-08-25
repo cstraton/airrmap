@@ -1,0 +1,76 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.158.0/containers/python-3
+{
+	"name": "Python 3",
+	"build": {
+		"dockerfile": "Dockerfile",
+		"context": "..",
+		"args": {
+			// Update 'VARIANT' to pick a Python version: 3, 3.6, 3.7, 3.8, 3.9
+			"VARIANT": "3.8",
+			// Options
+			"INSTALL_NODE": "false",
+			"NODE_VERSION": "lts/*"
+		}
+	},
+	// Set *default* container specific settings.json values on container create.
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"python.pythonPath": "/usr/local/bin/python",
+		"python.linting.enabled": true,
+		"python.linting.pylintEnabled": true,
+		"python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+		"python.formatting.autopep8Args": [
+			"--ignore=E402"
+		],
+		"python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+		"python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+		"python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
+		"python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+		"python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+		"python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
+		"python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
+		"python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
+	},
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"ms-python.python",
+		"njpwerner.autodocstring",
+		"ms-toolsai.jupyter",
+		"eamodio.gitlens",
+		"alexcvzz.vscode-sqlite",
+		"mhutchie.git-graph"
+	],
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [
+		5000,
+		5500
+	],
+	// Increase size of /dev/shm/ for Pandarallel
+	// Should be more than 30% of available RAM.
+	// Uncomment last 2 lines for RAM folder,
+	// and uncomment postStartCommand chmod further below.
+	"runArgs": [
+		"--shm-size",
+		"1.04gb",
+		//"--tmpfs",
+		//"${containerWorkspaceFolder}/data/ram",
+	],
+	// Mounts
+	// See https://code.visualstudio.com/docs/remote/containers-advanced
+	"mounts": [
+		"source=${localEnv:AIRRMAP_DATA},target=/airrmap-data,type=bind,consistency=cached"
+		//"source=${localEnv:USERPROFILE},target=/airrmap-data,type=bind,consistency=cached"
+	],
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// NOTE: Uncomment top line to download fixed ANARCI version (fd2f694), which also downloads latest IMGT reference sequences.
+	// 		Installs this package (airrmap) in edit mode.
+	//"postCreateCommand": "pip3 install --user -r requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && sudo apt-get -y install hmmer && sudo git clone https://github.com/oxpig/ANARCI.git ${containerWorkspaceFolder}/anarci && cd ${containerWorkspaceFolder}/anarci/ && sudo git reset --hard fd2f694 && sudo python ${containerWorkspaceFolder}/anarci/setup.py install && cd /workspaces/SpatialMap/ && pip install -e .",
+	"postCreateCommand": "pip3 install --user -r requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && cd /workspaces/SpatialMap/ && pip install -e .",
+
+	// Use 'postStartCommand' to run commands when the container starts.
+	//"postStartCommand": "sudo chmod 777 /workspaces/SpatialMap/data/ram/",
+
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode"
+}

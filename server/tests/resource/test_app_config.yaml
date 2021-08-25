@@ -1,0 +1,31 @@
+# Server config file used for testing.
+
+# NOTE! Remember to reflect any schema changes in config.py.
+
+version: 1
+base_path: /workspaces/SpatialMap/tests/resource/  # Changed to tests path.
+index_db: index.db
+default_environment: test_env
+tile_debug: false # Show debug information on rendered tiles.
+
+facet_row_max_allowed: 60 
+facet_col_max_allowed: 60
+
+column_plot_x: x_tf  # Column containing x plot coordinate
+column_plot_y: y_tf  # Column containing y plot coordinate
+column_value: 'value1'
+column_class: 'class_index'
+default_num_bins: 256
+default_tile_size: 256
+default_statistic: 'sum'
+
+# The range of computed coordinates in the record files.
+# Should be fixed to enable sequences to be plotted in the
+# same location between environments.
+# This drives the MinMax scaler when transforming to 0,256 tile space.
+# Should be large enough to accomodate all points.
+coordinates_range:
+  - -25
+  - 25
+
+# NOTE! Remember to reflect any schema changes in config.py.

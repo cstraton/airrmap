@@ -1,0 +1,14 @@
+
+.leaflet-grid-table {
+  height: calc(100vh - 61px); /* Minus header height */
+  /*max-width: calc(100vw - 476px); *//* Minus sidebar */
+  /*width: auto;*/
+  margin:0;
+  padding:0;
+}
+
+.leaflet-grid-cell {
+  position: relative;  /* Required for leaflet_item.css absolute positioning */
+}
+
+

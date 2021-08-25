@@ -1,0 +1,50 @@
+# Config file for environment
+# File paths should be relative to base folder.
+
+version: 1
+
+# Header
+title: Config for unit tests.
+description: Basic environment for unit tests.
+author: sys
+date_created: 2021-04-22
+meta: none.
+
+# Anchors
+anchor:
+  src_folder: src/anchor
+  src_files:
+    - IGHV.fasta
+  build_folder: build/anchor
+  build_image_folder: build/anchor/img
+  build_db_file: anchor.db
+  seq_field: 'aa_annotated' # Field containing the sequence value to use.
+  seq_field_is_json: True # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
+  method: MDS  # MDS, TSNE, PCA
+  random_state: 2
+  distance_measure: measure_distance3
+  regions: 
+    - cdrh1
+    - cdrh2
+  
+# Sequences
+sequence:
+  src_folder: src/seq
+  src_file_pattern: "*.json" # Wrap with quotes
+  build_folder: build/seq
+  build_image_folder: build/seq/img
+  build_db_files: \*.db # Remove
+  num_closest_anchors: 0 # 0 all
+  anchor_dist_compression: zlib  # zlib or gzip
+  anchor_dist_compression_level: 9 # 0-9 (highest).
+
+# Application
+application:
+  value1_field: redundancy
+  value2_field: v
+  cdr3_field: cdr3
+  redundancy_field: redundancy # Redundancy of sequence, used for reports.
+  numbered_seq_field: data # Field containing the IMGT numbered sequence, used for reports.
+  v_field: null
+  d_field: null
+  j_field: null

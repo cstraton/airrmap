@@ -1,0 +1,38 @@
+/* CSS for app.js / index.html */
+
+.container {
+  border: 0px solid blue; /* for debugging */
+}
+
+.container-fixed-height-100 {
+  min-height: 100vh;
+  max-height: 100vh;
+  padding: 0;
+}
+
+.no-border {
+  border: 0 !important;
+}
+
+.no-margin {
+  margin: 0 !important;
+}
+
+.modal-roi-report {
+  overflow-y: auto;
+  min-height: 75%;
+  max-height: 75%;
+}
+
+/* Semantic checkbox - center vertically */
+.semantic-checkbox-adjust {
+  margin-top: 8px;
+  margin-left: 10px;
+}
+
+/* For some reason, semantic.min.css sets left to 0, which causes fullscreen not to be centered.
+   To override:
+.ui.fullscreen.modal {
+  left: 30px !important; 
+}
+*/

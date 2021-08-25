@@ -1,0 +1,38 @@
+.DS_Store
+**/logs
+**/__pycache__
+**/.mypy_cache
+**/.pytest_cache
+**/results
+**/anarci
+
+# dask
+**/dask-worker-space
+mydask.png
+
+# Keep IMGT references and examples
+data/*
+!data/imgt_ref_download.sh
+!data/imgt-ref/IGHV.fasta
+!data/imgt-ref/IGHD.fasta
+!data/imgt-ref/IGHJ.fasta
+!data/example/
+
+# All csv files (except examples)
+*.csv
+!util/oas_doi_lookup.csv
+!data/example/oas_csv_example.csv
+
+### setup.py ###
+
+# Compiled python modules.
+*.pyc
+
+# Setuptools distribution folder.
+/dist/
+
+# Python egg metadata, regenerated from source files by setuptools.
+/*.egg-info
+
+# Ignore coverage
+.coverage

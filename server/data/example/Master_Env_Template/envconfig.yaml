@@ -1,0 +1,88 @@
+# Config file for environment
+# File paths should be relative to base folder.
+
+# Version history
+# 1.12 - Add application.numbered_seq_field_is_json.
+# 1.11 - Add _aa field warning.
+# 1.10 - Add application.v_field, d_field, j_field
+# 1.09 - Add application.redundancy_field and application.numbered_seq_field.
+# 1.08 - Add application.cdr3_field.
+# 1.07 - Add anchor.seq_field and seq_field_is_json.
+# 1.06 - Add application section
+# 1.05 - Add sequence.record_row_start
+# 1.04 - seq_field_is_json: Convert to int / add single-quoted option.
+# 1.03 - Add sequence.seq_field, seq_field_is_json and seq_id_field,
+#        output_file_compression, process_chunk_size, nb_workers.
+# 1.02 - Add plot.sort_values for custom sorting of facets
+# 1.01 - Add anchor.n_neighbors for UMAP (optional)
+# 1.00 - Initial
+
+version: 1.12
+
+# Header
+title: Environment title.
+description: Your description here.
+author: Author name.
+date_created: 2021-04-30
+meta: none.
+
+# Anchors
+anchor:
+  src_folder: src/anchor
+  src_files:
+    - IGHV.fasta
+  build_folder: build/anchor
+  build_image_folder: build/anchor/img
+  build_db_file: anchor.db
+  seq_field: 'aa_annotated' # Field containing the sequence value to use.
+  seq_field_is_json: True # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
+  method: MDS  # MDS, TSNE, PCA, UMAP
+  random_state: 2
+  n_neighbors: 100 # UMAP only, optional (default 100).
+  distance_measure: measure_distance3
+  regions:  # Regions to combine. Used for measure_distance3, and reporting (e.g. sequence logo).
+    - cdrh1
+    - cdrh2
+  
+  
+
+# Sequences
+sequence:
+  src_folder: src/seq
+  src_file_pattern: "*.json.gz" # Wrap with quotes.
+  build_folder: build/seq
+  build_image_folder: build/seq/img
+  build_db_files: \*.db # Remove.
+  seq_field: 'data' # Care! Use '*_aa' fields if OAS csv (e.g. 'cdr3_aa' NOT 'cdr3' which contains DNA). Field in data unit containing the sequence value to use.
+  seq_field_is_json: True # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
+  seq_id_field: 'name' # Field to use as seq ID - must be integers. Use null to auto-generate.
+  seq_row_start: 2 # Row that sequence records start (after any headers).
+  num_closest_anchors: 0 # 0 all.
+  save_anchor_dists: False # True to save binary-encoded anchor distances in the output records file (smaller file size and slightly faster processing if excluded).
+  anchor_dist_compression: zlib  # zlib or gzip (only used if save_anchor_dists is True).
+  anchor_dist_compression_level: 9 # 0-9 (highest) (only used if save_anchor_dists is True).
+  output_file_compression: snappy # Parquet file compression, snappy or gzip.
+  process_chunk_size: 20000 # Size of chunks to process when reading data unit into Pandas DataFrame. Each chunk will be processed in parallel.
+  process_nb_workers: null # Number of cpu processors to use, null will use all processors.
+
+# Application
+application:
+  value1_field: redundancy # Default, may be overridden by query.
+  value2_field: v # Default, may be overridden by query.
+  cdr3_field: cdr3_aa # CDR3 amino acid sequence, used for length distribution plots.
+  redundancy_field: redundancy # Redundancy of sequence, used for reports.
+  numbered_seq_field: data # Field containing the IMGT numbered sequence, used for reports.
+  numbered_seq_field_is_json: True # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
+  v_field: v  # Field containing the assigned V germline gene, or null. Used for reporting.
+  d_field: null  # Field containing the assigned D germline gene, or null. Used for reporting.
+  j_field: j  # Field containing the assigned J germline gene, or null. Used for reporting.
+
+
+# Plot settings (comment out if not used)
+#plot:
+#  sort_values:
+    # Case sensitive
+    # e.g. 
+    # file.Longitudinal:
+    # - before-Day-8
+    # - before-Day-2

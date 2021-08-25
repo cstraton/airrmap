@@ -1,0 +1,11 @@
+.leaflet-grid-cell {
+  position: relative;  /* Required for leaflet_item.css absolute positioning */
+}
+
+/* Reduce size and remove gradient of slider handle */
+.semantic_ui_range_inner > div:nth-of-type(3) {
+  height: 15px !important;
+  width: 15px !important;
+  top: 2.5px !important;
+  background: white !important;
+}
