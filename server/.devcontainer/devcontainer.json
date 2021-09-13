@@ -66,7 +66,7 @@
 	// NOTE: Uncomment top line to download fixed ANARCI version (fd2f694), which also downloads latest IMGT reference sequences.
 	// 		Installs this package (airrmap) in edit mode.
 	//"postCreateCommand": "pip3 install --user -r requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && sudo apt-get -y install hmmer && sudo git clone https://github.com/oxpig/ANARCI.git ${containerWorkspaceFolder}/anarci && cd ${containerWorkspaceFolder}/anarci/ && sudo git reset --hard fd2f694 && sudo python ${containerWorkspaceFolder}/anarci/setup.py install && cd /workspaces/SpatialMap/ && pip install -e .",
-	"postCreateCommand": "pip3 install --user -r requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && cd /workspaces/SpatialMap/ && pip install -e .",
+	"postCreateCommand": "pip3 install --user -r requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && cd ${containerWorkspaceFolder} && pip install -e .",
 
 	// Use 'postStartCommand' to run commands when the container starts.
 	//"postStartCommand": "sudo chmod 777 /workspaces/SpatialMap/data/ram/",

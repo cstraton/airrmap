@@ -14,7 +14,7 @@ class SeqFileType(Enum):
 class AppConfig():
 
     # TODO: Change default path
-    def __init__(self, fn_config: str = r'/workspaces/SpatialMap/server/config.yaml'):
+    def __init__(self, fn_config: str = r'/workspaces/airrmap/server/server/config.yaml'):
         """
         Initialise and load configuration file.
 
