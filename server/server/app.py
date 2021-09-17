@@ -288,9 +288,21 @@ async def lookup_env_list():
     """Get available environment names for the dropdown list."""
     cfg = config.AppConfig()
     env_data: dict = indexer.get_env_list(cfg.index_db)
-    env_list = [x['name'] for x in env_data]
+
+    # Build list in format required for dropdowns
+    env_list = []
+    for x in env_data:
+        item = dict(
+            key=x['name'],
+            text=x['name'],
+            value=x['name'],
+        )
+        env_list.append(item)
+
+    # JSON encode
     env_list_json = json.dumps(env_list)
 
+    # Return
     return Response(
         env_list_json,
         status=200,
@@ -303,14 +315,25 @@ async def lookup_field_list(env_name):
     """Get the list of available fields"""
     cfg = config.AppConfig()
 
-    #  TODO: Temporary workaround - change
+    #  Default
     if env_name == 'abc':
         env_name = cfg.default_environment
 
-    field_list = indexer.get_filters(cfg.index_db, env_name)
-    field_list = [x['value'] for x in field_list]
+     # Build list in format required for dropdowns
+    field_data = indexer.get_filters(cfg.index_db, env_name)
+    field_list = []
+    for x in field_data:
+        item = dict(
+            key=x['value'],
+            text=x['value'],
+            value=x['value']
+        )
+        field_list.append(item)
+
+    # JSON encode
     field_list_json = json.dumps(field_list).encode('utf-8')
 
+    # Return
     return Response(
         field_list_json,
         status=200,
@@ -318,7 +341,7 @@ async def lookup_field_list(env_name):
     )
 
 
-@app.route('/index/', methods=['GET'])
+@ app.route('/index/', methods=['GET'])
 async def index_read():
     """Get the index"""
     cfg = config.AppConfig()
@@ -499,9 +522,9 @@ async def get_polyroi_summary():
     j_field = env_config['application']['j_field']
 
     # Define regions to use for the sequence logos
-    # TODO: Make configurable. 
+    # TODO: Make configurable.
     # NOTE: Region should not contain chain letter ('cdr1' not 'cdrh1').
-    #regions = env_config['anchor']['regions']
+    # regions = env_config['anchor']['regions']
     regions = ['cdr1', 'cdr2', 'cdr3', 'cdr1-2']
 
     async def async_generator():
@@ -725,7 +748,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         # environment is not selected
         # (e.g. first time application is loaded)
         if 'env_name' not in query_d:
-            with open(os.path.join(os.path.dirname(__file__),'tile_placeholder.png'), 'rb') as f:
+            with open(os.path.join(os.path.dirname(__file__), 'tile_placeholder.png'), 'rb') as f:
                 imgbuf = io.BytesIO(f.read())
             return imgbuf, 200, {'content-type': 'image/png'}
 
@@ -752,7 +775,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
     if 'kderm' in request.args:
         kde_rel_mode = KDERelativeMode[request.args['kderm']]
     else:
-        #kde_rel_mode = KDERelativeMode.SINGLE
+        # kde_rel_mode = KDERelativeMode.SINGLE
         #  TODO: Change back, or add NONE to KDERelativeSelection (1-1 = 0)
         kde_rel_mode = KDERelativeMode.ALL
 
@@ -994,7 +1017,7 @@ if __name__ == '__main__':
     tile_helper = TileHelper()
     # TODO: make dynamic from categorical values
     v_groups = [f'IGHV{i+1}' for i in range(8)]
-    #v_groups.extend([f'IGLV{i+1}' for i in range(8)])
+    # v_groups.extend([f'IGLV{i+1}' for i in range(8)])
     v_group_le = LabelEncoder().fit(v_groups)
 
     # Get colours for label encodings (list of RGB tuples)
