@@ -23,10 +23,10 @@
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	//"forwardPorts": [5500],
+	"forwardPorts": [1234],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "npm i -g npm && npm i -g parcel-bundler@1.12.3 && npm i -D parcel-plugin-static-files-copy && npm install -g gulp@4.0.2 && npm i",
+	"postCreateCommand": "npm install -g npm@7.24.0 && npm i -g parcel-bundler@1.12.3 && npm install -g gulp@4.0.2 && npm i",
 
 	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "node"
