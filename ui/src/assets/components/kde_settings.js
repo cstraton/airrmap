@@ -2,7 +2,6 @@
 // KDE settings pane (dropdowns and sliders)
 
 import React, { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Ref, Segment, Select } from 'semantic-ui-react'
 import LookupList from './lookup_list'
 import { Slider } from 'react-semantic-ui-range'
