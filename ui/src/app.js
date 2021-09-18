@@ -7,9 +7,9 @@ import {
   Segment, Sidebar, Tab
 } from 'semantic-ui-react';
 
-import usePersistedState from "./assets/components/persisted_state";
+import usePersistedState from "./assets/components/persisted_state"
 import LeafletGrid from './assets/components/leaflet_grid.js'
-import FilterSelection from './assets/components/filter_selection.js'
+import FilterSelection2 from './assets/components/filter_selection2.js'
 import KDESettings from './assets/components/kde_settings.js'
 import ROIReport from './assets/components/roi_report.js'
 import SeqLocator from './assets/components/seq_locator.js'
@@ -73,6 +73,8 @@ function App(props) {
   // If not done, loaded properties from usePersistedState
   // won't take effect until changing the value / triggering
   // the onChange event in the UI.
+  mapController.setNumBins(numBins)
+  mapController.setBrightness(brightness)
   mapController.setKdeBandwidth(kdeBandwidth)
   mapController.setKdeBrightness(kdeBrightness)
   mapController.setKdeColormap(kdeColormap)
@@ -375,26 +377,26 @@ function App(props) {
   function RenderPanes() {
     return (
       [
+
         {
-          // Environment and Filters
-          menuItem: { key: 'filters', content: 'Filters' },
+          menuItem: { key: 'filters1', content: 'Data' },
           pane:
             <Tab.Pane key='filters-pane' className={'no-border'}>
-              <FilterSelection
+              <FilterSelection2 
                 submitHandler={submitFiltersHandler}
-                brightness={brightness}
-                setBrightness={setBrightness}
-                numBins={numBins}
-                setNumBins={setNumBins}
               />
             </Tab.Pane>
         },
         {
           // KDE config
-          menuItem: { key: 'kde', content: 'KDE' },
+          menuItem: { key: 'kde', content: 'Rendering' },
           pane:
             <Tab.Pane key='kde-pane' className={'no-border'}>
               <KDESettings
+                brightness={brightness}
+                setBrightness={setBrightness}
+                numBins={numBins}
+                setNumBins={setNumBins}
                 kdeBandwidth={kdeBandwidth}
                 setKdeBandwidth={setKdeBandwidth}
                 kdeBrightness={kdeBrightness}
