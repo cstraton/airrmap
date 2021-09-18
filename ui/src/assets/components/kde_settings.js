@@ -2,10 +2,8 @@
 // KDE settings pane (dropdowns and sliders)
 
 import React, { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Ref, Segment, Select } from 'semantic-ui-react'
 import LookupList from './lookup_list'
-import SliderControl from './slider_control'
 import { Slider } from 'react-semantic-ui-range'
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './css/filter_selection.css';
@@ -14,6 +12,8 @@ import CONFIG from '../../../config.json';
 
 
 function KDESettings({
+  brightness, setBrightness, 
+  numBins, setNumBins,
   kdeBrightness, setKdeBrightness,
   kdeBandwidth, setKdeBandwidth,
   kdeColormap, setKdeColormap,
@@ -26,6 +26,28 @@ function KDESettings({
 
   // State
   const [kdeOptions, setKdeOptions] = useState(null);
+
+  // Num Bins Slider
+  const numBinsSlider = {
+    start: 0,
+    min: 0,
+    max: 4,
+    step: 1,
+    onChange: value => {
+      setNumBins(value);
+    }
+  }
+
+  // Brightness slider settings
+  const brightnessSlider = {
+    start: 1.0,
+    min: 1.0,
+    max: 200,
+    step: 10.0,
+    onChange: value => {
+      setBrightness(value);
+    }
+  };
 
   // KDE bandwidth slider settings
   const kdeBandwidthSliderSettings = {
@@ -67,6 +89,47 @@ function KDESettings({
         }
       );
   }, [])
+
+
+  function RenderHeatmapBinSize() {
+    return (
+      <React.Fragment>
+        {/* Bin Count slider
+            NOTE: State handled by app.js and later passed to map URL. 
+                  Don't register with React Hook Form;
+                  keep separate as does not affect the
+                  filtering of data and would invalidate the cache
+                  if included in the form fields.
+        */}
+        <Header as='h5'><Icon className='bi bi-grip-horizontal' />Heatmap Bin Size</Header>
+        <Slider discrete
+          value={numBins}
+          color='blue'
+          settings={numBinsSlider}
+        />
+      </React.Fragment>
+    );
+  }
+
+  function RenderHeatmapBrightness() {
+    return (
+      <React.Fragment>
+        {/* Brightness slider 
+            NOTE: State handled by app.js and later passed to map URL. 
+                  Don't register with React Hook Form;
+                  keep separate as does not affect the
+                  filtering of data and would invalidate the cache
+                  if included in the form fields.
+        */}
+        <Header as='h5'><Icon className={brightness == 1.0 ? 'bi bi-lightbulb-off' : 'bi bi-lightbulb'} />Heatmap Brightness</Header>
+        <Slider discrete
+          value={brightness}
+          color='blue'
+          settings={brightnessSlider}
+        />
+      </React.Fragment>
+    );
+  }
 
   function RenderRelativeMode() {
 
@@ -294,6 +357,10 @@ function KDESettings({
     return (
       <div>
         <Form size={'small'}>
+
+          {/* Need to call as function, otherwise slider doesn't slide..? */}
+          {RenderHeatmapBrightness()}
+          {RenderHeatmapBinSize()}
 
           {/* Need to call as function, otherwise slider doesn't slide..? */}
           {RenderKDEBrightness()}
