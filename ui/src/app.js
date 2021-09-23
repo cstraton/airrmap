@@ -384,6 +384,7 @@ function App(props) {
             <Tab.Pane key='filters-pane' className={'no-border'}>
               <FilterSelection2 
                 submitHandler={submitFiltersHandler}
+                appStatusLoading={appStatusLoading}
               />
             </Tab.Pane>
         },

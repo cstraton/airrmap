@@ -225,7 +225,7 @@ class FilterSelection2 extends Component {
             selection
             onChange={this.handleChange}
           />
-          <Form.Button content='Submit' />
+          <Form.Button content='Submit' loading={this.props.appStatusLoading}/>
         </Form.Group>
 
         {/* Facet row/column */}
