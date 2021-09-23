@@ -528,7 +528,7 @@ class DataRepo:
             True if facet row was requested, by default False.
 
         facet_row_property_level: str, optional
-            Facet row property level, 'file' or 'record'. By default ''.
+            Facet row property level, 'f' (file) or 'r' (record). By default ''.
 
         facet_row_property_name: str, optional
             Facet row property name, e.g. 'Longitudinal', 'Subject'. By default ''.
@@ -545,7 +545,7 @@ class DataRepo:
             True if facet col was requested, by default False.
 
         facet_col_property_level: str, optional
-            Facet column property level, 'file' or 'record'. By default ''.
+            Facet column property level, 'f' (file) or 'r' (record). By default ''.
 
         facet_col_property_name: str, optional
             Facet column property name, e.g. 'Longitudinal', 'Subject'. By default ''.
@@ -739,12 +739,12 @@ class DataRepo:
             'env_name': 'MY_ENV_NAME',
             'value1_field': 'redundancy',  # Pass '' or exclude if not used, will use default in envconfig.yaml
             'value2_field': 'v', # Pass '' or exclude if not used, will use default in envconfig.yaml
-            'facet_col': 'file.Longitudinal',  # Pass '' or exclude if not used
-            'facet_row': 'file.Subject',       # Pass '' or exclude if not used
+            'facet_col': 'f.Longitudinal',  # Pass '' or exclude if not used
+            'facet_row': 'f.Subject',       # Pass '' or exclude if not used
             'filters': [
-                {'filter_name': 'file.Chain', 'filter_value': 'Heavy' },
-                {'filter_name': 'file.BSource', 'filter_value': 'PBMC'},
-                {'filter_name': 'record.v', 'filter_value': 'IGHV3-7*02'}
+                {'filter_name': 'f.Chain', 'filter_value': 'Heavy' },   # f. = file level
+                {'filter_name': 'f.BSource', 'filter_value': 'PBMC'},   # f. = file level 
+                {'filter_name': 'r.v', 'filter_value': 'IGHV3-7*02'}    # r. = record level
             ]
         }
         run_query(cfg, query)
@@ -753,8 +753,8 @@ class DataRepo:
 
         # Init
         t0 = time.process_time()
-        RECORD_FILTER_LEVEL = 'record'
-        FILE_FILTER_LEVEL = 'file'
+        RECORD_FILTER_LEVEL = 'r'
+        FILE_FILTER_LEVEL = 'f'
         FILTER_NAME = 'filter_name'
         FILTER_VALUE = 'filter_value'
         NOT_SPECIFIED = ''
@@ -792,7 +792,7 @@ class DataRepo:
         facet_row = query['facet_row'] if is_facet_row else NOT_SPECIFIED
         facet_col = query['facet_col'] if is_facet_col else NOT_SPECIFIED
 
-        # Split facet arg, e.g. 'record.file' --> ('record', 'file')
+        # Split facet arg, e.g. 'f.field1' --> ('f', 'field1')
         if is_facet_row:
             facet_row_property_level, facet_row_property_name = \
                 facet_row.split('.', 1)
@@ -876,7 +876,7 @@ class DataRepo:
         fdr_env = sqlescapy.sqlescape(fdr_env)
 
         # ***********************************************************************
-        # ** STEP 1: Obtain all filter properties ('file.' and 'record.' levels).
+        # ** STEP 1: Obtain all filter properties (file and record levels).
         #            Get the seq db files which are in scope and build
         #            record filters for the query.
         # ***********************************************************************
@@ -906,7 +906,7 @@ class DataRepo:
                     continue
 
                 # Split combined property_level and property_name
-                # (e.g. file.sys_filename -> ['file', 'sys_filename'])
+                # (e.g. 'f.sys_filename -> ['f', 'sys_filename'])
                 property_level, property_name = filter_item[FILTER_NAME].split(
                     '.', 1)
                 property_level = property_level.lower().strip()

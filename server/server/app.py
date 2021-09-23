@@ -475,9 +475,9 @@ async def get_polyroi_summary():
         {
             'env_name': 'MY_ENV_NAME',
             'filters': [
-                {'filter_name': 'file.Chain', 'filter_value': 'Heavy' ],
-                {'filter_name': 'file.BSource', 'filter_value': 'PBMC'],
-                ['filter_name': 'record.v', 'filter_value': 'IGHV3-7*02']
+                {'filter_name': 'f.Chain', 'filter_value': 'Heavy' ],
+                {'filter_name': 'f.BSource', 'filter_value': 'PBMC'],
+                ['filter_name': 'r.v', 'filter_value': 'IGHV3-7*02']
             ]
         }
         ```

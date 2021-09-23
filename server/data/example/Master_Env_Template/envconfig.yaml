@@ -2,6 +2,7 @@
 # File paths should be relative to base folder.
 
 # Version history
+# 1.13 - Plot sort values, replace 'file.Longitudinal' -> 'f.Longitudinal'
 # 1.12 - Add application.numbered_seq_field_is_json.
 # 1.11 - Add _aa field warning.
 # 1.10 - Add application.v_field, d_field, j_field
@@ -17,7 +18,7 @@
 # 1.01 - Add anchor.n_neighbors for UMAP (optional)
 # 1.00 - Initial
 
-version: 1.12
+version: 1.13
 
 # Header
 title: Environment title.
@@ -83,6 +84,6 @@ application:
 #  sort_values:
     # Case sensitive
     # e.g. 
-    # file.Longitudinal:
+    # f.Longitudinal:
     # - before-Day-8
     # - before-Day-2
