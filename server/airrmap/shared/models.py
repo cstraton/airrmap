@@ -92,8 +92,8 @@ class RepoQuery():
         filters : list, optional
             List of dictionaries with the following keys:
 
-            filter_name: The property name. This can be file meta level
-                (e.g. 'file.Chain') or record level (e.g. 'record.v').
+            filter_name: The property name. This can be (f)ile meta level
+                (e.g. 'f.Chain') or (r)ecord level (e.g. 'r.v').
 
             filter_value: The value to filter for / criteria.
         """
