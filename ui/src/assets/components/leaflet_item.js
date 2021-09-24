@@ -16,6 +16,7 @@ import imgMarkerIcon from '../img/leaflet-color-markers/marker-icon-blue.png';
 import L from 'leaflet';
 import 'leaflet.markercluster';
 import './css/leaflet_item.css';
+import CONFIG from '../../../config.json';
 
 // Vars
 const mapTheme = 'leaflet-container-light';
@@ -179,7 +180,7 @@ function LeafletItem({
           const center = mapController.activeMap.getCenter();
           const zoom = mapController.activeMap.getZoom();
           map.setView(center, zoom, {
-            'animate': false
+            'animate': CONFIG.mapItem.animateMove
           });
         }
       }
