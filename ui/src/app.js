@@ -24,8 +24,8 @@ function App(props) {
   const [filters, _setFilters] = useState({});  // User filters
 
   // Binned tile settings
-  const [brightness, _setBrightness] = useState(1.0); // Map brightness multiplier slider (tiles/binned)
-  const [numBins, _setNumBins] = useState(2); // 0 = 256, 1 = 128, 2 = 64 etc.
+  const [brightness, _setBrightness] = usePersistedState('store-app-brightness', 1.0); // Map brightness multiplier slider (tiles/binned)
+  const [numBins, _setNumBins] = usePersistedState('store-app-numBins', 2); // 0 = 256, 1 = 128, 2 = 64 etc.
 
   // KDE settings
   const [kdeBandwidth, _setKdeBandwidth] = usePersistedState('store-app-kdeBandwidth', 1.0); // KDE kernel bandwidth
@@ -34,8 +34,8 @@ function App(props) {
   const [kdeBrightness, _setKdeBrightness] = usePersistedState('store-app-kdeBrightness', 1.0); // KDE brightness multiplier slider
   const [kdeRelativeMode, _setKdeRelativeMode] = usePersistedState('store-app-kdeRelativeMode', 'ALL');
   const [kdeRelativeSelection, _setKdeRelativeSelection] = usePersistedState('store-app-kdeRelativeSelection', 'ALL');
-  const [kdeRowName, _setKdeRowName] = useState('');
-  const [kdeColumnName, _setKdeColumnName] = useState('');
+  const [kdeRowName, _setKdeRowName] = usePersistedState('store-app-kdeRowName', '');
+  const [kdeColumnName, _setKdeColumnName] = usePersistedState('store-app-kdeColumnName', '');
 
   // Query report information
   const [queryReport, setQueryReport] = useState({});
@@ -81,6 +81,8 @@ function App(props) {
   mapController.setKdeColormapInvert(kdeColormapInvert)
   mapController.setKdeRelativeMode(kdeRelativeMode)
   mapController.setKdeRelativeSelection(kdeRelativeSelection)
+  mapController.setKdeRowName(kdeRowName)
+  mapController.setKdeColumnName(kdeColumnName)
 
   // --- Callbacks ---
 
