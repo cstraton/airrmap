@@ -13,14 +13,6 @@ import CONFIG from '../../../config.json';
 
 class FilterSelection2 extends Component {
 
-  // Init state
-  //state = {
-  //  envSelected: null,
-  //  _envList: null,
-  //  _envFieldList: null,
-  //  filters: []
-  // }
-
   // Constructor
   // Load state from local storage or set defaults
   constructor() {
@@ -98,7 +90,6 @@ class FilterSelection2 extends Component {
 
     // Submit
     this.props.submitHandler(submitData);
-
   }
 
   // Add filter
@@ -113,19 +104,21 @@ class FilterSelection2 extends Component {
   }
 
   // Change filter (don't mutate array, create copy of item)
-  filterChange = (e, index, isFilterName) => {
+  // REF/Adapted from: https://goshakkk.name/array-form-inputs/
+  // For <data> variable properties, see:
+  // Dropdown: https://react.semantic-ui.com/modules/dropdown/
+  // Input: https://react.semantic-ui.com/elements/input/
+  filterChange = (e, data, index, isFilterName) => {
     e.preventDefault()
-    console.log(e)
     this.setState({
       filters: this.state.filters.map((filterItem, _index) => {
         if (_index !== index) return filterItem;
         // creates a new object, with fields from filterItem
         // and then set relevant property.
         if (isFilterName) {
-          // e will be dropdown div, use .innerText
-          return { ...filterItem, filterName: e.target.innerText }
+          return { ...filterItem, filterName: data.value }
         } else {
-          return { ...filterItem, filterValue: e.target.value }
+          return { ...filterItem, filterValue: data.value }
         }
       })
     });
@@ -190,7 +183,6 @@ class FilterSelection2 extends Component {
       );
   }
 
-
   // Functions to run after render
   componentDidMount() {
     this.loadEnvList()
@@ -204,7 +196,6 @@ class FilterSelection2 extends Component {
       this.loadEnvFields(this.state.envSelected)
     }
   }
-
 
   // Render
   render() {
@@ -225,7 +216,7 @@ class FilterSelection2 extends Component {
             selection
             onChange={this.handleChange}
           />
-          <Form.Button content='Submit' loading={this.props.appStatusLoading}/>
+          <Form.Button content='Submit' loading={this.props.appStatusLoading} />
         </Form.Group>
 
         {/* Facet row/column */}
@@ -256,23 +247,25 @@ class FilterSelection2 extends Component {
         {/* Filters */}
         <Header as='h5'><Icon className='bi bi-funnel' />Filter</Header>
         {this.state.filters.map((filterItem, index) => (
-          <Form.Group widths='equal' key={index}>
+          <Form.Group widths='equal' key={'filter_group_' + index}>
             <Form.Field
-              key='filter_name'
+              key={'filter_name'}
               control={Dropdown}
               options={this.state._envFieldList}
-              value={filterItem.filterName}
+              value={this.state.filters[index].filterName}
+              closeOnEscape
               search
               selection
+              selectOnNavigation={true}
               placeholder='Field...'
-              onChange={(e) => this.filterChange(e, index, true)}
+              onChange={(e, data) => this.filterChange(e, data, index, true)}
             />
             <Form.Field
               key='filter_value'
               control={Input}
               value={this.state.filters[index].filterValue}
               placeholder='Criteria...'
-              onChange={(e) => this.filterChange(e, index, false)}
+              onChange={(e, data) => this.filterChange(e, data, index, false)}
             />
             {/* Remove single filter button */}
             <Button icon
