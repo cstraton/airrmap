@@ -376,13 +376,15 @@ function App(props) {
   }
 
   // Construct tab panes
+  // Use `render: () =>` instead of `pane:` for <Tab> property renderActiveOnly={true}.
+  // If using renderActiveOnly={false}, react-semantic-ui-range slider doesn't render
+  // <value> correctly (issue with component / race condition with rendering?).
   function RenderPanes() {
     return (
       [
-
         {
           menuItem: { key: 'filters1', content: 'Data' },
-          pane:
+          render: () =>
             <Tab.Pane key='filters-pane' className={'no-border'}>
               <FilterSelection2 
                 submitHandler={submitFiltersHandler}
@@ -393,7 +395,7 @@ function App(props) {
         {
           // KDE config
           menuItem: { key: 'kde', content: 'Rendering' },
-          pane:
+          render: () =>
             <Tab.Pane key='kde-pane' className={'no-border'}>
               <KDESettings
                 brightness={brightness}
@@ -425,7 +427,7 @@ function App(props) {
         {
           // ROI Selection
           menuItem: { key: 'roi-report', content: 'ROI-Select' },
-          pane:
+          render: () =>
             <Tab.Pane key='roi-report-pane' className={'no-border'}>
               <ROIReport
                 //If updating this, also update RenderROIReport below
@@ -439,7 +441,7 @@ function App(props) {
         {
           // Sequence locator list
           menuItem: { key: 'seq-locator', content: 'Search' },
-          pane:
+          render: () =>
             <Tab.Pane key='seq-locator-pane' className={'no-border'}>
               <SeqLocator
                 env_name={filters['env_name']}
@@ -585,7 +587,7 @@ function App(props) {
                 width={'very wide'}
               >
                 {/*Tab Container */}
-                <Tab menu={{ secondary: true, pointing: true, color: 'blue' }} panes={RenderPanes()} renderActiveOnly={false} />
+                <Tab menu={{ secondary: true, pointing: true, color: 'blue' }} panes={RenderPanes()} renderActiveOnly={true} />
               </Sidebar>
 
               {/* Right Map Grid */}

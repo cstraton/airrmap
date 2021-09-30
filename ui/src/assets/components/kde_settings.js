@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from 'react'
 import { Checkbox, Divider, Dropdown, Form, Grid, Header, Icon, Label } from 'semantic-ui-react'
 import { Slider } from 'react-semantic-ui-range'
+import usePersistedState from "../../assets/components/persisted_state"
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './css/filter_selection.css';
 import '../../index.css';
@@ -24,7 +25,7 @@ function KDESettings({
   facetRowValues, facetColValues }) {
 
   // State
-  const [kdeOptions, setKdeOptions] = useState(null);
+  const [kdeOptions, setKdeOptions] = usePersistedState(null);
 
   // Num Bins Slider
   const numBinsSlider = {
