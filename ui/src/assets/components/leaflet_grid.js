@@ -10,8 +10,7 @@ function LeafletGrid ( {
     mapController,
     facetRowValues,
     facetColValues,
-    queryReport,
-    mapStatsEnabled
+    queryReport
     }) {
 
   // If facet row/column was specified, the server will have provided a list
@@ -74,7 +73,6 @@ function LeafletGrid ( {
                   iCol={iCol}
                   facetRowValue={mapItem['r']}
                   facetColValue={mapItem['c']}
-                  mapStatsEnabled={mapStatsEnabled}
                   stats={mapItem['stats']}
                 >
                 </LeafletItem>
