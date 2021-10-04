@@ -65,7 +65,7 @@ function App(props) {
   // Sync maps and map control
   const [mapSync, _setMapSync] = useState(false) // Whether maps are synced or not
   const [mapGridEnabled, _setMapGridEnabled] = useState(false) // 
-  const [mapStatsEnabled, _setMapStatsEnabled] = useState(false)
+  const [mapStatsEnabled, _setMapStatsEnabled] = usePersistedState('store-app-mapStatsEnabled', false);
   const [mapController, setMapController] = useState(new MasterMapController());
 
 
@@ -87,6 +87,7 @@ function App(props) {
   mapController.setKdeRelativeSelection(kdeRelativeSelection)
   mapController.setKdeRowName(kdeRowName)
   mapController.setKdeColumnName(kdeColumnName)
+  mapController.setMapStatsEnabled(mapStatsEnabled)
 
   // --- Callbacks ---
 
@@ -170,15 +171,14 @@ function App(props) {
     _setMapSync(mapSync);
   }
 
+  const setMapStatsEnabled = (value) => {
+    mapController.setMapStatsEnabled(value);
+    _setMapStatsEnabled(value);
+  }
+
   const setMapGridEnabled = (gridEnabled) => {
     mapController.setMapGridEnabled(gridEnabled)
     _setMapGridEnabled(gridEnabled);
-  }
-
-  const setMapStatsEnabled = (value) => {
-    //mapController not used as don't need the Leaflet map instance.
-    //mapController.setMapStatsEnabled(value)
-    _setMapStatsEnabled(value)
   }
 
   const setMarkerItems = (markerItems) => {
@@ -616,7 +616,6 @@ function App(props) {
                   facetRowValues={facetRowValues}
                   facetColValues={facetColValues}
                   queryReport={queryReport}
-                  mapStatsEnabled={mapStatsEnabled}
                 />
               </Sidebar.Pusher>
             </Sidebar.Pushable>

@@ -34,7 +34,6 @@ function LeafletItem({
   iCol,
   facetRowValue,
   facetColValue,
-  mapStatsEnabled,
   stats }) {
 
   // Final render display
@@ -48,6 +47,7 @@ function LeafletItem({
     const [KDELoading, setKDELoading] = useState(false);
     const [binnedEnabled, setBinnedEnabled] = useState(true);
     const [BinnedLoading, setBinnedLoading] = useState(false);
+    const [mapStatsEnabled, setMapStatsEnabled] = useState(false);
 
     // Map setter
     // Set both the map and area selection instance
@@ -102,7 +102,7 @@ function LeafletItem({
     return (
       <React.Fragment>
         {mapContainer}
-        <LayerStats mapStatsEnabled={mapStatsEnabled} stats={stats} />
+        {mapStatsEnabled ? <LayerStats stats={stats} /> : null }
         {/*{map ? <LayerPositionInfo map={map} /> : null}*/}
         {map ? <LayerMarkers mapController={mapController} map={map} /> : null}
         {map ? <MapEventsController
@@ -111,7 +111,10 @@ function LeafletItem({
           areaSelect={areaSelect}
           graticule={graticule}
           setBinnedEnabled={setBinnedEnabled}
-          setKdeEnabled={setKdeEnabled} /> : null
+          setKdeEnabled={setKdeEnabled} 
+          setMapStatsEnabled={setMapStatsEnabled}
+          /> : null
+          
         }
         <Loader active={KDELoading || BinnedLoading} />
       </React.Fragment>
@@ -120,7 +123,7 @@ function LeafletItem({
 
   // Handle events from the map and area selection
   function MapEventsController(
-    { map, mapController, areaSelect, graticule, setBinnedEnabled, setKdeEnabled }
+    { map, mapController, areaSelect, graticule, setBinnedEnabled, setKdeEnabled, setMapStatsEnabled }
   ) {
 
     // Handle mousedown
@@ -229,6 +232,16 @@ function LeafletItem({
         mapController.removeEventListener('kdeEnabledChanged', onKdeEnabled);
       }
     }, [mapController, onKdeEnabled])
+
+    const onMapStatsEnabled = useCallback((data) => {
+      setMapStatsEnabled(data.detail);
+    })
+    useEffect(() => {
+      mapController.addEventListener('mapStatsChanged', onMapStatsEnabled);
+      return () => {
+        mapController.removeEventListener('mapStatsChanged', onMapStatsEnabled);
+      }
+    }, [mapController, onMapStatsEnabled])
 
 
 
@@ -407,13 +420,8 @@ function LeafletItem({
   }
 
   // Show statistics from the query report
-  function LayerStats({ mapStatsEnabled, stats }) {
-
-    // If not enabled, don't show
-    if (!mapStatsEnabled) {
-      return null;
-    }
-
+  function LayerStats({ stats }) {
+ 
     // If null, display nothing
     if (stats === null || stats === undefined) {
       return (<p>No report.</p>);
@@ -672,7 +680,6 @@ function LeafletItem({
       facetRowValue={facetRowValue}
       facetColValue={facetColValue}
       mapLabel={mapLabel}
-      mapStatsEnabled={mapStatsEnabled}
       stats={stats}
     />
   );

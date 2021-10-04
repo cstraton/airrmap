@@ -18,6 +18,7 @@ export default class MasterMapController extends EventTarget {
     this.zoom = 0;
     this.activeMap = null;
     this.mapSync = false;
+    this.mapStatsEnabled = false;
     this.mapGridEnabled = false;
     this.areaSelectEnabled = false;
     this.areaSelectInProgress = false;
@@ -91,6 +92,12 @@ export default class MasterMapController extends EventTarget {
       const evt = new CustomEvent('moved', {});
       this.dispatchEvent(evt);
     }
+  }
+
+  // Map Stats Enabled changed
+  onMapStatsChanged(value) {
+    const evt = new CustomEvent('mapStatsChanged', {detail: value});
+    this.dispatchEvent(evt);
   }
 
   // Map grid enabled
@@ -247,6 +254,11 @@ export default class MasterMapController extends EventTarget {
     if (this.mapSync) {
       this.onMove()
     }
+  }
+
+  setMapStatsEnabled(value) {
+    this.mapStatsEnabled = value;
+    this.onMapStatsChanged(value);
   }
 
   setMapGridEnabled(value) {
