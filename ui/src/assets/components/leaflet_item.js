@@ -5,6 +5,7 @@ import { Loader } from 'semantic-ui-react';
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, ImageOverlay, Pane, useMap } from 'react-leaflet';
 import '../js/vendor/leaflet.area_select/leaflet.area_select.js'; // Area selection
+import '../js/vendor/Leaflet.SmoothWheelZoom/SmoothWheelZoom.js'; // Smooth wheel zooming
 import '../js/vendor/L.SimpleGraticule/L.SimpleGraticule.js'; // Grid of coordinates
 import '../js/vendor/L.SimpleGraticule/L.SimpleGraticule.css';
 import { CRS } from 'leaflet';
@@ -74,14 +75,18 @@ function LeafletItem({
         zoom={0}
         boxZoom={false}
         zoomControl={false}
-        zoomAnimation={true}
-        zoomSnap={0}
-        zoomDelta={1}
-        wheelPxPerZoomLevel={60/1}
         inertia={true}
         attributionControl={false}
         fadeAnimation={true}
-        scrollWheelZoom={true}
+        //zoomAnimation={true}
+        zoomSnap={0}
+        //zoomDelta={1}
+        //wheelPxPerZoomLevel={60/1}
+        // --- SmoothWheelZoom plugin ---
+        scrollWheelZoom={false}
+        smoothWheelZoom={true}
+        smoothSensitivity={CONFIG.mapItem.zoom.smoothSensitivity}
+        // --------------------------
         crs={CRS.Simple}
         smFacetRowValue={facetRowValue} // Store props in map container. Used for facet roi queries.
         smFacetColValue={facetColValue} // sm prefix to prevent conflicts with Leaflet.

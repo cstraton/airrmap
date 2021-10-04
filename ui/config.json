@@ -1,7 +1,11 @@
 {
     "baseUrl": "http://localhost:5000/",
     "mapItem": {
-        "animateMove": true
+        "animateMove": false,
+        "zoom": {
+            "smoothSensitivity": 2.0
+        }
+
     }
 
 }
