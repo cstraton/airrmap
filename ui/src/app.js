@@ -19,15 +19,17 @@ import CONFIG from '../config.json';
 function App(props) {
 
   // State and vars
-  // If changing, consider updating Set loaded mapcontroller properties
+  // NOTE: If changing, consider updating Set loaded mapcontroller properties
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [filters, _setFilters] = useState({});  // User filters
 
   // Binned tile settings
+  const [binnedEnabled, _setBinnedEnabled] = usePersistedState('store-app-binnedEnabled', true);
   const [brightness, _setBrightness] = usePersistedState('store-app-brightness', 1.0); // Map brightness multiplier slider (tiles/binned)
   const [numBins, _setNumBins] = usePersistedState('store-app-numBins', 2); // 0 = 256, 1 = 128, 2 = 64 etc.
 
   // KDE settings
+  const [kdeEnabled, _setKdeEnabled] = usePersistedState('store-app-kdeEnabled', true);
   const [kdeBandwidth, _setKdeBandwidth] = usePersistedState('store-app-kdeBandwidth', 1.0); // KDE kernel bandwidth
   const [kdeColormap, _setKdeColormap] = usePersistedState('store-app-kdeColormap', 'RdBu'); // Colour map to use
   const [kdeColormapInvert, _setKdeColormapInvert] = usePersistedState('store-app-kdeColormapInvert', false); // Invert colours
@@ -73,8 +75,10 @@ function App(props) {
   // If not done, loaded properties from usePersistedState
   // won't take effect until changing the value / triggering
   // the onChange event in the UI.
+  mapController.setBinnedEnabled(binnedEnabled)
   mapController.setNumBins(numBins)
   mapController.setBrightness(brightness)
+  mapController.setKdeEnabled(kdeEnabled)
   mapController.setKdeBandwidth(kdeBandwidth)
   mapController.setKdeBrightness(kdeBrightness)
   mapController.setKdeColormap(kdeColormap)
@@ -91,6 +95,11 @@ function App(props) {
     _setFilters(filters);
   }
 
+  const setBinnedEnabled = (value) => {
+    mapController.setBinnedEnabled(value);
+    _setBinnedEnabled(value);
+  }
+
   const setNumBins = (numBins) => {
     mapController.setNumBins(numBins);
     _setNumBins(numBins);
@@ -99,6 +108,11 @@ function App(props) {
   const setBrightness = (brightness) => {
     mapController.setBrightness(brightness);
     _setBrightness(brightness);
+  }
+
+  const setKdeEnabled = (value) => {
+    mapController.setKdeEnabled(value);
+    _setKdeEnabled(value);
   }
 
   const setKdeBrightness = (value) => {
@@ -398,10 +412,14 @@ function App(props) {
           render: () =>
             <Tab.Pane key='kde-pane' className={'no-border'}>
               <KDESettings
+                binnedEnabled={binnedEnabled}
+                setBinnedEnabled={setBinnedEnabled}
                 brightness={brightness}
                 setBrightness={setBrightness}
                 numBins={numBins}
                 setNumBins={setNumBins}
+                kdeEnabled={kdeEnabled}
+                setKdeEnabled={setKdeEnabled}
                 kdeBandwidth={kdeBandwidth}
                 setKdeBandwidth={setKdeBandwidth}
                 kdeBrightness={kdeBrightness}

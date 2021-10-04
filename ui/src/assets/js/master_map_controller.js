@@ -21,6 +21,7 @@ export default class MasterMapController extends EventTarget {
     this.mapGridEnabled = false;
     this.areaSelectEnabled = false;
     this.areaSelectInProgress = false;
+    this.kdeEnabled = true; // KDE layer
     this.kdeBrightness = 1.0; // KDE brightness
     this.kdeBandwidth = 1.0;
     this.kdeColormap = 'RdBu';
@@ -29,6 +30,7 @@ export default class MasterMapController extends EventTarget {
     this.kdeRelativeSelection = 'ALL';
     this.kdeRowName = '';
     this.kdeColumnName = '';
+    this.binnedEnabled = true; // Density heatmap layer
     this.brightness = 1.0; // Map brightness multiplier slider (tile/binned)
     this.numBins = 2;  // 0 = 256, 1 = 128, 2 = 64 etc.
     this.filters = {};
@@ -39,6 +41,12 @@ export default class MasterMapController extends EventTarget {
     this.KdeUrlTimer = null; // timer
     this.timerWaitms = 1500;
     this.baseUrl = CONFIG.baseUrl;
+  }
+
+  onBinnedEnabledChanged(value) {
+    // Property name must be 'detail'
+    const evt = new CustomEvent('binnedEnabledChanged', { detail: value });
+    this.dispatchEvent(evt);
   }
 
   onTileUrlChanged() {
@@ -56,6 +64,11 @@ export default class MasterMapController extends EventTarget {
     }, this.timerWaitms);
   }
 
+  onKdeEnabledChanged(value) {
+    // Property name must be 'detail'
+    const evt = new CustomEvent('kdeEnabledChanged', { detail: value });
+    this.dispatchEvent(evt);
+  }
 
   onKdeUrlChanged() {
 
@@ -148,6 +161,11 @@ export default class MasterMapController extends EventTarget {
     this.dispatchEvent(evt);
   }
 
+  setKdeEnabled(value) {
+    this.kdeEnabled = value;
+    this.onKdeEnabledChanged(value);
+  }
+
   setKdeBrightness(value) {
     this.kdeBrightness = value;
     this.onKdeUrlChanged();
@@ -186,6 +204,11 @@ export default class MasterMapController extends EventTarget {
   setKdeColumnName(value) {
     this.kdeColumnName = value;
     this.onKdeUrlChanged();
+  }
+
+  setBinnedEnabled(value) {
+    this.binnedEnabled = value;
+    this.onBinnedEnabledChanged(value);
   }
 
   setNumBins(value) {
@@ -266,14 +289,14 @@ export default class MasterMapController extends EventTarget {
   getKdeUrl(facetRowValue, facetColValue) {
     // -1 y for L.CRS coordinate system. Currently global (0,0,-1)
     return this.baseUrl + "tiles/imagery/kde-diff/0/0/-1.png?a=1" +
-      "&kdebrightness=" + encodeURIComponent(this.kdeBrightness) + 
+      "&kdebrightness=" + encodeURIComponent(this.kdeBrightness) +
       "&kdebw=" + encodeURIComponent(this.kdeBandwidth) +
-      "&kdecm=" + encodeURIComponent(this.kdeColormap) + 
+      "&kdecm=" + encodeURIComponent(this.kdeColormap) +
       "&kdecminv=" + encodeURIComponent(this.kdeColormapInvert) +
-      "&kderm=" + encodeURIComponent(this.kdeRelativeMode) + 
-      "&kdesm=" + encodeURIComponent(this.kdeRelativeSelection) + 
-      "&kderowname=" + encodeURIComponent(this.kdeRowName) + 
-      "&kdecolname=" + encodeURIComponent(this.kdeColumnName) + 
+      "&kderm=" + encodeURIComponent(this.kdeRelativeMode) +
+      "&kdesm=" + encodeURIComponent(this.kdeRelativeSelection) +
+      "&kderowname=" + encodeURIComponent(this.kdeRowName) +
+      "&kdecolname=" + encodeURIComponent(this.kdeColumnName) +
       "&q=" + encodeURIComponent(JSON.stringify(this.filters)) +
       "&v1min=" + encodeURIComponent(JSON.stringify(this.value1Min)) +
       "&v1max=" + encodeURIComponent(JSON.stringify(this.value1Max)) +
