@@ -44,7 +44,9 @@ function LeafletItem({
     const [map, _setMap] = useState(null);
     const [areaSelect, setAreaSelect] = useState(null);
     const [graticule, setGraticule] = useState(null);
+    const [kdeEnabled, setKdeEnabled] = useState(true);
     const [KDELoading, setKDELoading] = useState(false);
+    const [binnedEnabled, setBinnedEnabled] = useState(true);
     const [BinnedLoading, setBinnedLoading] = useState(false);
 
     // Map setter
@@ -85,8 +87,8 @@ function LeafletItem({
         smFacetColValue={facetColValue} // sm prefix to prevent conflicts with Leaflet.
         whenCreated={setMap} // Store map instance
       >
-        <LayerBinnedTile mapController={mapController} facetRowValue={facetRowValue} facetColValue={facetColValue} setBinnedLoading={setBinnedLoading} />
-        <LayerKDE mapController={mapController} facetRowValue={facetRowValue} facetColValue={facetColValue} setKDELoading={setKDELoading} />
+        {binnedEnabled ? <LayerBinnedTile mapController={mapController} facetRowValue={facetRowValue} facetColValue={facetColValue} setBinnedLoading={setBinnedLoading} /> : null}
+        {kdeEnabled ? <LayerKDE mapController={mapController} facetRowValue={facetRowValue} facetColValue={facetColValue} setKDELoading={setKDELoading} /> : null}
         <LayerAreaSelect />
         <LayerGridCoordinates setGraticule={setGraticule} />
 
@@ -94,7 +96,7 @@ function LeafletItem({
         <span className={'map-label'}>{mapLabel}</span>
 
       </MapContainer>
-    ), [facetRowValue, facetColValue]);
+    ), [facetRowValue, facetColValue, binnedEnabled, kdeEnabled]);
 
     // Return final render
     return (
@@ -103,14 +105,23 @@ function LeafletItem({
         <LayerStats mapStatsEnabled={mapStatsEnabled} stats={stats} />
         {/*{map ? <LayerPositionInfo map={map} /> : null}*/}
         {map ? <LayerMarkers mapController={mapController} map={map} /> : null}
-        {map ? <MapEventsController map={map} mapController={mapController} areaSelect={areaSelect} graticule={graticule} /> : null}
+        {map ? <MapEventsController
+          map={map}
+          mapController={mapController}
+          areaSelect={areaSelect}
+          graticule={graticule}
+          setBinnedEnabled={setBinnedEnabled}
+          setKdeEnabled={setKdeEnabled} /> : null
+        }
         <Loader active={KDELoading || BinnedLoading} />
       </React.Fragment>
     );
   }
 
   // Handle events from the map and area selection
-  function MapEventsController({ map, mapController, areaSelect, graticule }) {
+  function MapEventsController(
+    { map, mapController, areaSelect, graticule, setBinnedEnabled, setKdeEnabled }
+  ) {
 
     // Handle mousedown
     // Pass on mouse down event
@@ -191,6 +202,34 @@ function LeafletItem({
         mapController.removeEventListener('moved', onMasterMove);
       }
     }, [mapController, onMasterMove])
+
+
+    // --- LAYER CONTROL ---
+
+    // Take event from Master Map Controller and
+    // set local state props, instead of
+    // of passing component props down from app.js.
+    // (the latter causes re-rendering and loss of map state).
+    const onBinnedEnabled = useCallback((data) => {
+      setBinnedEnabled(data.detail);
+    })
+    useEffect(() => {
+      mapController.addEventListener('binnedEnabledChanged', onBinnedEnabled);
+      return () => {
+        mapController.removeEventListener('binnedEnabledChanged', onBinnedEnabled);
+      }
+    }, [mapController, onBinnedEnabled])
+
+    const onKdeEnabled = useCallback((data) => {
+      setKdeEnabled(data.detail);
+    })
+    useEffect(() => {
+      mapController.addEventListener('kdeEnabledChanged', onKdeEnabled);
+      return () => {
+        mapController.removeEventListener('kdeEnabledChanged', onKdeEnabled);
+      }
+    }, [mapController, onKdeEnabled])
+
 
 
     // --- AREA SELECTION ---
@@ -575,7 +614,7 @@ function LeafletItem({
 
       // Set line style
       //graticule.lineStyle.color = '#BBBBBB'; //'#111';
-      graticule.lineStyle.color = '#888888'; 
+      graticule.lineStyle.color = '#888888';
       graticule.lineStyle.opacity = 0.8;
       graticule.lineStyle.weight = 0.2;
 

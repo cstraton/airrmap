@@ -12,8 +12,10 @@ import CONFIG from '../../../config.json';
 
 
 function KDESettings({
+  binnedEnabled, setBinnedEnabled,
   brightness, setBrightness,
   numBins, setNumBins,
+  kdeEnabled, setKdeEnabled,
   kdeBrightness, setKdeBrightness,
   kdeBandwidth, setKdeBandwidth,
   kdeColormap, setKdeColormap,
@@ -396,7 +398,21 @@ function KDESettings({
     return (
       <div>
         <Form>
-          <Divider horizontal><Header as='h4'><Icon className={'bi bi-grid-fill'} />Heatmap</Header></Divider>
+
+          {/* --- HEATMAP SETTINGS --- */}
+          <Divider horizontal>
+            <Header as='h4'>
+              <Icon
+                color={binnedEnabled ? 'green' : 'grey'}
+                link
+                circular
+                size='small'
+                className={'power'}
+                onClick={() => setBinnedEnabled(!binnedEnabled)}
+              />
+              Heatmap
+            </Header>
+          </Divider>
           {/* Need to call as function, otherwise slider doesn't slide..? */}
           <Form.Field>
             <label>Brightness</label>
@@ -407,7 +423,21 @@ function KDESettings({
             {RenderHeatmapBinSize()}
           </Form.Field>
           <p><br /></p>
-          <Divider horizontal><Header as='h4'><Icon className={'bi bi-record-circle-fill'} />KDE</Header></Divider>
+
+          {/* --- KDE SETTINGS --- */}
+          <Divider horizontal color='green'>
+            <Header as='h4'>
+              <Icon
+                color={kdeEnabled ? 'green' : 'grey'}
+                link
+                circular
+                size="small"
+                className={'power'}
+                onClick={() => setKdeEnabled(!kdeEnabled)}
+              />
+              KDE
+            </Header>
+          </Divider>
           {/* Need to call as function, otherwise slider doesn't slide..? */}
           <Form.Field>
             <label>Brightness</label>
