@@ -2,10 +2,11 @@
   "name": "airrmap",
   "version": "1.0.0",
   "description": "AIRR Map: An interactive visualisation platform for immune repertoire analytics.",
-  "main": "index.js",
+  "source": "src/index.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "parcel index_react_parcel_example.html --open"
+    "start": "./node_modules/.bin/parcel src/index.html",
+    "build": "./node_modules/.bin/parcel build --no-scope-hoist"
   },
   "author": "",
   "license": "ISC",
@@ -36,6 +37,7 @@
     "@babel/plugin-proposal-class-properties": "^7.14.5",
     "@parcel/transformer-image": "^2.0.0-rc.0",
     "cssnano": "^5.0.5",
+    "parcel": "^2.0.0-rc.0",
     "parcel-plugin-static-files-copy": "^2.6.0",
     "postcss": "^8.3.0"
   }
