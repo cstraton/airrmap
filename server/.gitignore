@@ -5,6 +5,7 @@
 **/.pytest_cache
 **/results
 **/anarci
+**/static
 
 # dask
 **/dask-worker-space

@@ -44,10 +44,9 @@ from airrmap.shared import models
 from airrmap.application.kde import KDERelativeMode, KDERelativeSelection, KDEItem, KDEGroup, KDEManager
 from airrmap.shared.timing import Timing
 
-
 # %% Module level vars
 # app = Flask(__name__)
-app = Quart(__name__)
+app = Quart(__name__, static_url_path='', static_folder=r'static')
 # CORS(app)  # Allow any origin, any route. (for cross-origin errors in browser).
 cors(app)
 class_rgb = None
@@ -62,7 +61,6 @@ request_ctr = 0
 kde_manager = KDEManager()
 cfg = config.AppConfig()
 env_name = cfg.default_environment
-
 
 def _compute_seq_coords(env_name: str, seq_list_text: str, cfg: config.AppConfig, scaler_xy) -> List[Dict]:
     """
@@ -1008,28 +1006,34 @@ def get_xy_scaler() -> MinMaxScaler:
 
 
 # %% Main
+#if __name__ == '__main__':
+
+
+
+
+# Init
+print("Initialising...")
+scaler_xy = get_xy_scaler()
+data_repo = DataRepo(cfg)
+tile_helper = TileHelper()
+# TODO: make dynamic from categorical values
+v_groups = [f'IGHV{i+1}' for i in range(8)]
+# v_groups.extend([f'IGLV{i+1}' for i in range(8)])
+v_group_le = LabelEncoder().fit(v_groups)
+
+# Get colours for label encodings (list of RGB tuples)
+print("Getting colours...")
+num_classes = len(v_group_le.classes_)
+v_group_rgb = sns.mpl_palette("Set2", num_classes, as_cmap=False)
+class_rgb = np.array(v_group_rgb)
+# ts, class_rgb, df = init_test_card()
+print("Initialised")
+
+# Start the server
+from werkzeug.middleware.profiler import ProfilerMiddleware
+# app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5], profile_dir='./profile')
+
 if __name__ == '__main__':
-
-    # Init
-    print("Initialising...")
-    scaler_xy = get_xy_scaler()
-    data_repo = DataRepo(cfg)
-    tile_helper = TileHelper()
-    # TODO: make dynamic from categorical values
-    v_groups = [f'IGHV{i+1}' for i in range(8)]
-    # v_groups.extend([f'IGLV{i+1}' for i in range(8)])
-    v_group_le = LabelEncoder().fit(v_groups)
-
-    # Get colours for label encodings (list of RGB tuples)
-    print("Getting colours...")
-    num_classes = len(v_group_le.classes_)
-    v_group_rgb = sns.mpl_palette("Set2", num_classes, as_cmap=False)
-    class_rgb = np.array(v_group_rgb)
-    # ts, class_rgb, df = init_test_card()
-    print("Initialised")
-
-    # Start the server
-    from werkzeug.middleware.profiler import ProfilerMiddleware
-    # app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5], profile_dir='./profile')
-    # app.run(debug=True)
-    app.run(debug=False)  # , host='0.0.0.0')
+    #app.run(debug=True)
+    #app.run(debug=False)  # , host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0')
