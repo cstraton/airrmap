@@ -68,6 +68,7 @@
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// NOTE: Uncomment top line to download fixed ANARCI version (fd2f694), which also downloads latest IMGT reference sequences.
 	// 		Installs this package (airrmap) in edit mode.
+	// NOTE: If changing this, update Dockerfile in root.
 	//"postCreateCommand": "pip3 install --user -r requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && sudo apt-get -y install hmmer && sudo git clone https://github.com/oxpig/ANARCI.git ${containerWorkspaceFolder}/anarci && cd ${containerWorkspaceFolder}/anarci/ && sudo git reset --hard fd2f694 && sudo python ${containerWorkspaceFolder}/anarci/setup.py install && cd /workspaces/SpatialMap/ && pip install -e .",
 	"postCreateCommand": "pip3 install --user -r server/requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && pip install -e ${containerWorkspaceFolder}/server && npm install -g npm@7.24.0 && npm install -g parcel@2.0.0-rc.0 && npm install -g gulp@4.0.2 && cd ${containerWorkspaceFolder}/ui npm i",
 
