@@ -8,12 +8,15 @@
 	docker-run \
 	docker-buildrun \
 	docker-build \
-	clean-build
+	clean-build \
+	init-data-folder
+
 
 # vars
 PORT=5000
 CONTAINER_NAME=airrmap-server
 IMAGE_NAME=airrmap-server
+DATA_FOLDER_VAR=AIRRMAP_DATA
 
 # Build the front end, and output files to the static folder of the Python server
 clean-build:
@@ -37,7 +40,6 @@ docker-run:
 ifneq ($(shell docker ps -aq -f status=exited -f name=$(CONTAINER_NAME)),)
 	docker rm $(CONTAINER_NAME)
 endif
-
 # Run the container
 	docker run \
 		-v $(AIRRMAP_DATA):/airrmap-data \
@@ -59,3 +61,27 @@ start-ui:
 # Start the Python Quart server
 start-server:
 	python server/server/app.py
+
+
+# Set env variable for data folder:
+# (if not already set)
+init-data-folder:
+ifeq ($(fdr),)
+	@echo '"fdr" argument not supplied. Run: make init-data-folder fdr="your/data/path"'
+else
+ifeq ($($(DATA_FOLDER_VAR)),)
+	@echo '$(DATA_FOLDER_VAR) variable is not set. Will add to "$(HOME)/.profile"'
+	echo '' >> $(HOME)/.profile
+	echo '# AIRRMAP Data Folder' >> $(HOME)/.profile
+	echo 'export $(DATA_FOLDER_VAR)=$(fdr)' >> $(HOME)/.profile
+	. $(HOME)/.profile
+	export $(DATA_FOLDER_VAR)=$(fdr)
+	@echo 'Added to "$(HOME)/.profile"'
+else	
+	@echo '$(DATA_FOLDER_VAR) variable is already set to "$($(DATA_FOLDER_VAR))"'
+	@echo 'Will NOT be added to "$(HOME)/.profile"'
+endif
+endif
+# Copy config.yaml to data folder
+	cp ./server/data/example/config.yaml $($(DATA_FOLDER_VAR))
+	@echo Copied config.yaml to $($(DATA_FOLDER_VAR))
