@@ -5,11 +5,11 @@
 version: 1
 base_path: /airrmap-data/
 index_db: index.db
-default_environment: 'Anchor_MLAT_Analysis'
+default_environment: 'Example_Environment'
 tile_debug: false # Show debug information on rendered tiles.
 
-facet_row_max_allowed: 60 
-facet_col_max_allowed: 60
+facet_row_max_allowed: 30 
+facet_col_max_allowed: 30
 
 column_plot_x: x_tf  # Column containing x plot coordinate
 column_plot_y: y_tf  # Column containing y plot coordinate
