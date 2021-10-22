@@ -14,6 +14,7 @@ export default class MasterMapController extends EventTarget {
     super(); // Need 'this'.
 
     // Use setter() functions below, don't set directly.
+    // Defaults are overridden by states in app.js
     this.position = [0.0, 0.0];
     this.zoom = 0;
     this.activeMap = null;
@@ -23,17 +24,17 @@ export default class MasterMapController extends EventTarget {
     this.areaSelectEnabled = false;
     this.areaSelectInProgress = false;
     this.kdeEnabled = true; // KDE layer
-    this.kdeBrightness = 1.0; // KDE brightness
-    this.kdeBandwidth = 1.0;
+    this.kdeBrightness = 2.0; // KDE brightness
+    this.kdeBandwidth = 0.8;
     this.kdeColormap = 'RdBu';
-    this.kdeColormapInvert = false;
-    this.kdeRelativeMode = 'ALL';
+    this.kdeColormapInvert = true;
+    this.kdeRelativeMode = 'SINGLE';
     this.kdeRelativeSelection = 'ALL';
     this.kdeRowName = '';
     this.kdeColumnName = '';
-    this.binnedEnabled = true; // Density heatmap layer
+    this.binnedEnabled = false; // Density heatmap layer
     this.brightness = 1.0; // Map brightness multiplier slider (tile/binned)
-    this.numBins = 2;  // 0 = 256, 1 = 128, 2 = 64 etc.
+    this.numBins = 1;  // 0 = 256, 1 = 128, 2 = 64 etc.
     this.filters = {};
     this.markerItems = []; // Map marker items.
     this.value1Min = 0.0;

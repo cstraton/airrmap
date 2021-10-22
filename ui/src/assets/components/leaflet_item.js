@@ -44,25 +44,28 @@ function LeafletItem({
     const [map, _setMap] = useState(null);
     const [areaSelect, setAreaSelect] = useState(null);
     const [graticule, setGraticule] = useState(null);
-    const [kdeEnabled, setKdeEnabled] = useState(true);
+    const [mapGridEnabled, setMapGridEnabled] = useState(mapController.mapGridEnabled);
+    const [kdeEnabled, setKdeEnabled] = useState(mapController.kdeEnabled);
     const [KDELoading, setKDELoading] = useState(false);
-    const [binnedEnabled, setBinnedEnabled] = useState(true);
+    const [binnedEnabled, setBinnedEnabled] = useState(mapController.binnedEnabled);
     const [BinnedLoading, setBinnedLoading] = useState(false);
-    const [mapStatsEnabled, setMapStatsEnabled] = useState(false);
+    const [mapStatsEnabled, setMapStatsEnabled] = useState(mapController.mapStatsEnabled);
 
     // Map setter
-    // Set both the map and area selection instance
+    // Set both the map, area select and grid instances
     const setMap = ((map) => {
 
       // Set max zoom to avoid error when using
       // MarkerClusterGroup in LayerMarkers()
       // REF: https://github.com/Leaflet/Leaflet.markercluster/issues/611
       map._layersMaxZoom = 10;
-
       _setMap(map);
+
+      // ---- Area selection ----
       const _areaSelect = map.selectAreaFeature.enable(); // new instance.
       _areaSelect.disable(); // turn off selection mode.
       setAreaSelect(_areaSelect);
+
     });
 
     // useMemo to only render first time.
@@ -95,7 +98,7 @@ function LeafletItem({
         {binnedEnabled ? <LayerBinnedTile mapController={mapController} facetRowValue={facetRowValue} facetColValue={facetColValue} setBinnedLoading={setBinnedLoading} /> : null}
         {kdeEnabled ? <LayerKDE mapController={mapController} facetRowValue={facetRowValue} facetColValue={facetColValue} setKDELoading={setKDELoading} /> : null}
         <LayerAreaSelect />
-        <LayerGridCoordinates setGraticule={setGraticule} />
+        <LayerGrid setGraticule={setGraticule} />
 
         {/* Map Label */}
         <span className={'map-label'}>{mapLabel}</span>
@@ -118,6 +121,7 @@ function LeafletItem({
           setBinnedEnabled={setBinnedEnabled}
           setKdeEnabled={setKdeEnabled} 
           setMapStatsEnabled={setMapStatsEnabled}
+          setMapGridEnabled={setMapGridEnabled}
           /> : null
           
         }
@@ -128,7 +132,7 @@ function LeafletItem({
 
   // Handle events from the map and area selection
   function MapEventsController(
-    { map, mapController, areaSelect, graticule, setBinnedEnabled, setKdeEnabled, setMapStatsEnabled }
+    { map, mapController, areaSelect, graticule, setBinnedEnabled, setKdeEnabled, setMapStatsEnabled, setMapGridEnabled }
   ) {
 
     // Handle mousedown
@@ -248,6 +252,38 @@ function LeafletItem({
       }
     }, [mapController, onMapStatsEnabled])
 
+    // Grid enabled
+    const onMapGridEnabled = useCallback((ev) => {
+      if (graticule) {
+        graticule.options.hidden = false;
+        graticule.redraw();
+      }
+      setMapGridEnabled(true);
+    });
+    useEffect(() => {
+      mapController.addEventListener('mapgridenabled', onMapGridEnabled);
+      return () => {
+        mapController.removeEventListener('mapgridenabled', onMapGridEnabled);
+      }
+    }, [mapController, onMapGridEnabled])
+
+    // Grid disabled
+    const onMapGridDisabled = useCallback((ev) => {
+      if (graticule) {
+        graticule.options.hidden = true;
+        graticule.redraw();
+      }
+      setMapGridEnabled(false);
+    });
+    useEffect(() => {
+      mapController.addEventListener('mapgriddisabled', onMapGridDisabled);
+      return () => {
+        mapController.removeEventListener('mapgriddisabled', onMapGridDisabled);
+      }
+    }, [mapController, onMapGridDisabled])
+
+    return null;
+  }
 
 
     // --- AREA SELECTION ---
@@ -356,39 +392,6 @@ function LeafletItem({
       }
     }, [mapController, onMasterMouseUp])
 
-
-    // --- MAP GRID ---
-
-    // Grid enabled
-    const onMapGridEnabled = useCallback((ev) => {
-      if (graticule) {
-        graticule.options.hidden = false;
-        graticule.redraw();
-      }
-    });
-    useEffect(() => {
-      mapController.addEventListener('mapgridenabled', onMapGridEnabled);
-      return () => {
-        mapController.removeEventListener('mapgridenabled', onMapGridEnabled);
-      }
-    }, [mapController, onMapGridEnabled])
-
-    // Grid disabled
-    const onMapGridDisabled = useCallback((ev) => {
-      if (graticule) {
-        graticule.options.hidden = true;
-        graticule.redraw();
-      }
-    });
-    useEffect(() => {
-      mapController.addEventListener('mapgriddisabled', onMapGridDisabled);
-      return () => {
-        mapController.removeEventListener('mapgriddisabled', onMapGridDisabled);
-      }
-    }, [mapController, onMapGridDisabled])
-
-    return null;
-  }
 
   // Show the current coordinates
   // Adapted from: https://react-leaflet.js.org/docs/example-external-state
@@ -560,6 +563,44 @@ function LeafletItem({
 
   }
 
+  // Grid Layer
+  // (use panes to keep grid lines in front of image layers.)
+  function LayerGrid({setGraticule}) {
+
+    // Init
+    var map = useMap();
+ 
+    var grid_options = {
+      hidden: true,
+      interval: 20,
+      showOriginLabel: true,
+      redraw: 'move',
+      zoomIntervals: [
+        { start: 0, end: 3, interval: 50 },
+        { start: 4, end: 5, interval: 5 },
+        { start: 6, end: 20, interval: 1 }
+      ]
+    };
+    const _graticule = L.simpleGraticule(grid_options)
+
+    // Set line style
+    //_graticule.lineStyle.color = '#BBBBBB'; //'#111';
+    _graticule.lineStyle.color = '#888888';
+    _graticule.lineStyle.opacity = 0.8;
+    _graticule.lineStyle.weight = 0.2;
+
+    // Add it to the map
+    _graticule.addTo(map);
+
+    // Store it
+    setGraticule(_graticule);
+    
+    // Render 
+    return (
+      <Pane name='simple-graticule-pane' style={{ zIndex: 510 }} />
+    );
+  }
+
   // Binned Tile layer
   // See GridLayerOptions: https://leafletjs.com/reference-1.1.0.html#gridlayer-tilesize */}
   function LayerBinnedTile({ mapController, facetRowValue, facetColValue, setBinnedLoading }) {
@@ -601,45 +642,6 @@ function LeafletItem({
           }}
         />
       </Pane>
-    );
-  }
-
-  // Grid of coordinates (use panes to keep grid lines in front of image layers.
-  function LayerGridCoordinates({ setGraticule }) {
-
-    // Refs
-    const map = useMap();
-
-    // Set up
-    useEffect(() => {
-      var options = {
-        hidden: true,
-        interval: 20,
-        showOriginLabel: true,
-        redraw: 'move',
-        zoomIntervals: [
-          { start: 0, end: 3, interval: 50 },
-          { start: 4, end: 5, interval: 5 },
-          { start: 6, end: 20, interval: 1 }
-        ]
-      };
-      const graticule = L.simpleGraticule(options)
-
-      // Set line style
-      //graticule.lineStyle.color = '#BBBBBB'; //'#111';
-      graticule.lineStyle.color = '#888888';
-      graticule.lineStyle.opacity = 0.8;
-      graticule.lineStyle.weight = 0.2;
-
-      // Add it to the map
-      graticule.addTo(map);
-
-      // Store it
-      setGraticule(graticule);
-    }, [])
-
-    return (
-      <Pane name='simple-graticule-pane' style={{ zIndex: 510 }} />
     );
   }
 
