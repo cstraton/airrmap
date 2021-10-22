@@ -24,17 +24,17 @@ function App(props) {
   const [filters, _setFilters] = useState({});  // User filters
 
   // Binned tile settings
-  const [binnedEnabled, _setBinnedEnabled] = usePersistedState('store-app-binnedEnabled', true);
+  const [binnedEnabled, _setBinnedEnabled] = usePersistedState('store-app-binnedEnabled', false);
   const [brightness, _setBrightness] = usePersistedState('store-app-brightness', 1.0); // Map brightness multiplier slider (tiles/binned)
-  const [numBins, _setNumBins] = usePersistedState('store-app-numBins', 2); // 0 = 256, 1 = 128, 2 = 64 etc.
+  const [numBins, _setNumBins] = usePersistedState('store-app-numBins', 1); // 0 = 256, 1 = 128, 2 = 64 etc.
 
   // KDE settings
   const [kdeEnabled, _setKdeEnabled] = usePersistedState('store-app-kdeEnabled', true);
-  const [kdeBandwidth, _setKdeBandwidth] = usePersistedState('store-app-kdeBandwidth', 1.0); // KDE kernel bandwidth
+  const [kdeBandwidth, _setKdeBandwidth] = usePersistedState('store-app-kdeBandwidth', 0.8); // KDE kernel bandwidth
   const [kdeColormap, _setKdeColormap] = usePersistedState('store-app-kdeColormap', 'RdBu'); // Colour map to use
-  const [kdeColormapInvert, _setKdeColormapInvert] = usePersistedState('store-app-kdeColormapInvert', false); // Invert colours
-  const [kdeBrightness, _setKdeBrightness] = usePersistedState('store-app-kdeBrightness', 1.0); // KDE brightness multiplier slider
-  const [kdeRelativeMode, _setKdeRelativeMode] = usePersistedState('store-app-kdeRelativeMode', 'ALL');
+  const [kdeColormapInvert, _setKdeColormapInvert] = usePersistedState('store-app-kdeColormapInvert', true); // Invert colours
+  const [kdeBrightness, _setKdeBrightness] = usePersistedState('store-app-kdeBrightness', 2.0); // KDE brightness multiplier slider
+  const [kdeRelativeMode, _setKdeRelativeMode] = usePersistedState('store-app-kdeRelativeMode', 'SINGLE');
   const [kdeRelativeSelection, _setKdeRelativeSelection] = usePersistedState('store-app-kdeRelativeSelection', 'ALL');
   const [kdeRowName, _setKdeRowName] = usePersistedState('store-app-kdeRowName', '');
   const [kdeColumnName, _setKdeColumnName] = usePersistedState('store-app-kdeColumnName', '');
