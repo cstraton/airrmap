@@ -110,7 +110,7 @@ function LeafletItem({
     return (
       <React.Fragment>
         {mapContainer}
-        {mapStatsEnabled ? <LayerStats stats={stats} /> : null }
+        {mapStatsEnabled ? <LayerStats stats={stats} /> : null}
         {/*{map ? <LayerPositionInfo map={map} /> : null}*/}
         {map ? <LayerMarkers mapController={mapController} map={map} /> : null}
         {map ? <MapEventsController
@@ -119,11 +119,11 @@ function LeafletItem({
           areaSelect={areaSelect}
           graticule={graticule}
           setBinnedEnabled={setBinnedEnabled}
-          setKdeEnabled={setKdeEnabled} 
+          setKdeEnabled={setKdeEnabled}
           setMapStatsEnabled={setMapStatsEnabled}
           setMapGridEnabled={setMapGridEnabled}
-          /> : null
-          
+        /> : null
+
         }
         <Loader active={KDELoading || BinnedLoading} />
       </React.Fragment>
@@ -282,9 +282,6 @@ function LeafletItem({
       }
     }, [mapController, onMapGridDisabled])
 
-    return null;
-  }
-
 
     // --- AREA SELECTION ---
 
@@ -392,6 +389,10 @@ function LeafletItem({
       }
     }, [mapController, onMasterMouseUp])
 
+    // Return
+    return null;
+  }
+
 
   // Show the current coordinates
   // Adapted from: https://react-leaflet.js.org/docs/example-external-state
@@ -429,7 +430,7 @@ function LeafletItem({
 
   // Show statistics from the query report
   function LayerStats({ stats }) {
- 
+
     // If null, display nothing
     if (stats === null || stats === undefined) {
       return (<p>No report.</p>);
@@ -528,7 +529,7 @@ function LeafletItem({
         const lng = markerItem['x'];
         const seq = markerItem['seq'].toString();
         let marker = L.marker([lat, lng], { icon: markerIcon });
-        marker.bindTooltip((i+1).toString(),
+        marker.bindTooltip((i + 1).toString(),
           {
             permanent: true,
             direction: 'top',
@@ -565,11 +566,11 @@ function LeafletItem({
 
   // Grid Layer
   // (use panes to keep grid lines in front of image layers.)
-  function LayerGrid({setGraticule}) {
+  function LayerGrid({ setGraticule }) {
 
     // Init
     var map = useMap();
- 
+
     var grid_options = {
       hidden: true,
       interval: 20,
@@ -594,7 +595,7 @@ function LeafletItem({
 
     // Store it
     setGraticule(_graticule);
-    
+
     // Render 
     return (
       <Pane name='simple-graticule-pane' style={{ zIndex: 510 }} />
