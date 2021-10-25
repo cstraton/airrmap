@@ -3,7 +3,7 @@
 // renders the plots.
 // Facets will be rendered same order as rendered tiles.
 
-import React, { useState } from "react"
+import React from "react"
 import Plot from 'react-plotly.js';
 
 export default function ROICDR3Length({ report, section_name, facetRowValues, facetColValues, setAppStatus }) {
@@ -45,7 +45,7 @@ export default function ROICDR3Length({ report, section_name, facetRowValues, fa
       subplotIndex++;
       const item = {
         key: rowValue.toString() + keyDelim + colValue.toString(),
-        name: rowValue.toString() + ', ' + colValue.toString(),
+        name: rowValue.toString() + '<br />' + colValue.toString(), // The subplot title, see subplotTitle for styling
         subplotIndex: subplotIndex,
         facetRowIndex: facetRowIndex,
         facetColIndex: facetColIndex,
@@ -60,7 +60,6 @@ export default function ROICDR3Length({ report, section_name, facetRowValues, fa
       // Store
       // Subplots format: https://plotly.com/javascript/subplots/
       rowSubplots.push(item['xaxis'] + item['yaxis'])
-      //subplots.push(item['xaxis'] + item['yaxis'])
       facetItems[item['key']] = item;
       facetColIndex++;
     }
@@ -68,7 +67,6 @@ export default function ROICDR3Length({ report, section_name, facetRowValues, fa
     // Add row of subplots, and increment
     subplots.push(rowSubplots);
     facetRowIndex++;
-
   }
 
   // Get the report and properties
@@ -119,13 +117,17 @@ export default function ROICDR3Length({ report, section_name, facetRowValues, fa
     // Plotly.js doesn't currently support 
     // subplot titles https://github.com/plotly/plotly.js/issues/2746
     // Adapted from codepen: https://codepen.io/nicolaskruchten/pen/ExZNPbz
+    // Plotly Annotations: https://plotly.com/javascript/text-and-annotations/
     const subplotTitle = {
       text: facetItem['name'],
       showarrow: false,
       x: 0.5,
       xref: facetItem['xref'],
       yref: facetItem['yref'],
-      y: 1.05,
+      y: 1.2,
+      font: {
+        size: 12
+      }
     }
 
     // Store
@@ -146,17 +148,21 @@ export default function ROICDR3Length({ report, section_name, facetRowValues, fa
       annotationItems.push(facetItem['annotationItem']);
     }
   }
-  
+
   // Define the grid
   let layout = {
     //autosize: true,
     //width: 1500,
-    //height: 800,
+    //height: 480,
     title: 'CDR3 length',
-    xaxis: {
-      type: 'category',
-      title: ''
-    },
+    //xaxis1: {
+    //  type: '-', // Default, auto (e.g. 'linear', 'category')
+    //  title: 'Column1' 
+    //},
+    //xaxis2: {
+    //  type: '-', 
+    //  title: 'Column2'
+    //},
     grid: {
       rows: facetRowValues.length,
       columns: facetColValues.length,
@@ -164,13 +170,22 @@ export default function ROICDR3Length({ report, section_name, facetRowValues, fa
       roworder: 'top to bottom',
       pattern: 'independent' // coupled doesn't appear to work?
     },
-    annotations: annotationItems
+    annotations: annotationItems,
+    showlegend: false // hide right interactive legend
   };
+
+  // Set xaxis title for each subplot
+  //for (var i=0; i<facetColValues.length; i++) {
+  //  const axisKey = 'xaxis' + (i+1);
+  //  layout[axisKey] = {}
+  //  layout[axisKey]['type'] = '-';
+  //  layout[axisKey]['title'] = facetColValues[i];
+  //}
 
   // Config
   let plotConfig = {
     displayModeBar: false,
-    responsive: true
+    responsive: false
   }
 
   // Render the plot
@@ -180,6 +195,7 @@ export default function ROICDR3Length({ report, section_name, facetRowValues, fa
       data={traceItems}
       layout={layout}
       useResizeHandler={true}
+      // style: see also roi_report.css
       style={{ width: "100%", height: "100%" }}
     />
   )
