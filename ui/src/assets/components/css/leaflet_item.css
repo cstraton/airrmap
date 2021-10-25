@@ -31,6 +31,7 @@
   padding-top: 2px;
   padding-bottom: 2px;
   bottom: 0px;
+  user-select: none; /* stop label highlighting during region select */
   /*opacity: 0.4*/;
   z-index: 1000;
 }
