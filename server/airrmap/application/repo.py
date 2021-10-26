@@ -318,7 +318,8 @@ class DataRepo:
             cfg=cfg, 
             query=query.to_dict(),
             split_by_facet=True,
-            allow_cached_report=True)
+            allow_cached_report=True,
+            t = None)
         t.add('Run coords query.')
 
         # If facet provided, then just get the data for that facet.
@@ -661,7 +662,9 @@ class DataRepo:
             scaler_xy=None,
             value2_le=None,
             split_by_facet=False,
-            allow_cached_report=False) -> Tuple:
+            allow_cached_report=False,
+            t: Timing = None,
+            ) -> Tuple:
         """
         Run a user query in the given environment.
 
@@ -714,6 +717,10 @@ class DataRepo:
             ensure the report is regenerated. Typically, use True
             for tile requests and False when user submits a new query.
             By default, False.
+
+        t : Timing (Optional)
+            Timing information will be added if supplied.
+            By default, False.
             
         Returns
         -------
@@ -752,12 +759,15 @@ class DataRepo:
         """
 
         # Init
+        if t is None:
+            t = Timing()
         t0 = time.process_time()
         RECORD_FILTER_LEVEL = 'r'
         FILE_FILTER_LEVEL = 'f'
         FILTER_NAME = 'filter_name'
         FILTER_VALUE = 'filter_value'
         NOT_SPECIFIED = ''
+        t.add("Start of query process.")
 
         # Get the selected filters and env config
         env_name = query['env_name']
@@ -785,7 +795,7 @@ class DataRepo:
         elif value2_field is None:
             raise ValueError(
                 'value2_field not passed in query and no default in envconfig.yaml')
-
+ 
         # Facet row/col (if provided)
         is_facet_row = 'facet_row' in query and query['facet_row'] != NOT_SPECIFIED
         is_facet_col = 'facet_col' in query and query['facet_col'] != NOT_SPECIFIED
@@ -820,6 +830,9 @@ class DataRepo:
         except KeyError:
             facet_col_sort_values = []
 
+        t.add("Query arguments retrieved.")
+
+
         # Return cached results if already exists
         # NOTE!: If updating, remember to update report at
         #       bottom of function (non-cached df return)
@@ -832,6 +845,7 @@ class DataRepo:
 
             if report_cached is not None and allow_cached_report:
                 report = report_cached
+                t.add("Query report generated.", {"cached": True})
             else:
                 report = DataRepo.get_coords_query_report(
                     df=df,
@@ -856,6 +870,9 @@ class DataRepo:
                     facet_col_max_allowed=cfg.facet_col_max_allowed,
                     facet_col_sort_values=facet_col_sort_values
                 )
+                t.add("Query report generated.", {"cached": False})
+
+            t.add("Query completed.", {"cached": True})
             return (df, report, d_split_by_facet) if split_by_facet else (df, report)
 
         if 'filters' in query:
@@ -1013,6 +1030,7 @@ class DataRepo:
         sql_params = [env_name]
         # sql_params.extend(filter_prop_names)
         sql_params.extend(file_sql_filters)
+        t.add("Query preparation completed.")
 
         # Get the -record- filenames that fall in-scope for the given filter.
         # Don't create db file if doesn't exist
@@ -1021,6 +1039,7 @@ class DataRepo:
             files = [file_name
                      for file_name
                      in curr.execute(sql_file_list, sql_params).fetchall()]
+            t.add("In-scope file list loaded from Metadata Index.")
 
             # Check if any files match the given filters
             if files == []:
@@ -1071,6 +1090,7 @@ class DataRepo:
         fns_meta: Any = [os.path.join(
             fdr_meta, fn.replace('.parquet', '.meta.parquet')) for fn in file_list]
         fns_meta = fns_meta if len(fns_meta) > 1 else fns_meta[0]
+        t.add("Parquet file and column details retrieved.")
 
         # Read -record- Parquet files
         df = pd.read_parquet(
@@ -1081,6 +1101,7 @@ class DataRepo:
             memory_map=False,
             buffer_size=0
         )
+        t.add("Parquet file data loaded to DataFrame.")
 
         # Add on the facet fields to the main
         # records DataFrame (as category type).
@@ -1167,6 +1188,7 @@ class DataRepo:
                 # (cleaner for groupby shortly...)
                 df[facet_df_column] = NOT_SPECIFIED
                 df[facet_df_column] = df[facet_df_column].astype('category')
+        t.add("Facet values added to DataFrame.")
 
         # If facet row/column is file-level;
         # can remove sys_file_id we temporarily added
@@ -1186,6 +1208,7 @@ class DataRepo:
             value2_field: 'value2'
         }
         df.rename(columns=col_mapping, inplace=True)
+        t.add("Tidying columns completed.")
 
         # -------------------------------------------
 
@@ -1194,14 +1217,17 @@ class DataRepo:
         if scaler_xy is not None:
             df['x_tf'] = scaler_xy.transform(df[['x']].values)
             df['y_tf'] = scaler_xy.transform(df[['y']].values)
+            t.add("Added scaled X/Y columns.", {"computed": True})
         else:
             df['x_tf'] = df['x']
             df['y_tf'] = df['y']
+            t.add("Added scaled X/Y columns.", {"computed": False})
 
         # reverse y, so higher y values are down.
         # must be performed - after- scaling.
         #df['y_tf'] = df['y_tf'].max() - df['y_tf']
         df['y_tf'] = 256.0 - df['y_tf']  # Should be maximum world y allowed
+        t.add("Reversed scaled Y column")
 
         # Negate y - in tile world space, higher y is down,
         # but Leaflet map L.CRS coordinate system, higher y is up.
@@ -1219,6 +1245,7 @@ class DataRepo:
         )
         for col_name, dtype in column_size_convert.items():
             df[col_name] = df[col_name].astype(dtype)
+        t.add("Changed column data types (reduce memory usage).")
 
         # TODO: Temporay, remove
         # %% Label encode category value.
@@ -1226,8 +1253,10 @@ class DataRepo:
             df['class_index'] = value2_le.transform(
                 df['value2'].apply(lambda x: x[:5]))  # First 5, e.g. IGHV3))
             df['class_index'] = df['class_index'].astype('uint32')
+            t.add("Added class_index (value2 label encoder).", {"computed": True})
         else:
             df['class_index'] = df['value2']
+            t.add("Added class_index (value2 label encoder).", {"computed": False})
 
         # Create DataFrame split by facet
         # Always compute and store in the cache
@@ -1240,6 +1269,7 @@ class DataRepo:
             facet_row_column='facet_row',
             facet_col_column='facet_col'
         )
+        t.add("Facet split completed.")
 
         # Store in the cache (full df and split by facet)
         self._query_cache[query_hash] = (df, d_split_by_facet)
@@ -1247,6 +1277,7 @@ class DataRepo:
         # Remove oldest/first item if over the cache size
         if len(self._query_cache) > self.query_cache_size:
             oldest_item = self._query_cache.popitem(last=False)
+        t.add("Cache operations completed.")
 
         # Build report
         # NOTE: If updating, remember to update report at
@@ -1275,10 +1306,12 @@ class DataRepo:
             facet_col_max_allowed=cfg.facet_col_max_allowed,
             facet_col_sort_values=facet_col_sort_values
         )
+        t.add("Query report generated.")
 
 
         # Store report in the cache
         self._report_cache.store(query_hash, report)
 
         # Return
+        t.add("Query completed.", {"cached": False})
         return (df, report, d_split_by_facet) if split_by_facet else (df, report)

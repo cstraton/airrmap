@@ -695,15 +695,24 @@ async def query_data():
         global v_group_le
         global num_classes
 
+        # Init
+        t = Timing()
+
         # Run the query and get the report
         df, report = data_repo.run_coords_query(
             cfg=cfg,
             query=query,
             scaler_xy=scaler_xy,
-            value2_le=v_group_le)
+            value2_le=v_group_le,
+            t=t)
 
         # Return the report (but not the dataset, leave cached)
         report_json = json.dumps(report).encode('utf-8')
+        
+        # Show timing information
+        if cfg.tile_debug:
+            print(json.dumps(t, default=vars, indent=2, sort_keys=True))
+
         yield report_json
 
     return async_generator(), \
@@ -880,7 +889,8 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         scaler_xy=scaler_xy,
         value2_le=v_group_le,
         split_by_facet=True,
-        allow_cached_report=True
+        allow_cached_report=True,
+        t = None
     )
     t.add('Dataset loaded.')
 
