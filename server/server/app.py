@@ -147,11 +147,16 @@ def _build_tile_binned(tile_request: models.TileRequest,
                        cfg: config.AppConfig,
                        num_bins: int,
                        num_classes: int,
-                       class_rgb) -> Image.Image:
+                       class_rgb,
+                       t: Timing = None) -> Image.Image:
     """
     Compute the 2D histogram for a tile and return the
     rendered image.
     """
+
+    # Init timer
+    if t is None:
+        t = Timing()
 
     # Get the binned data
     abinned = TileHelper.get_tile_binned(
@@ -168,6 +173,7 @@ def _build_tile_binned(tile_request: models.TileRequest,
         world_class=cfg.column_class,
         num_classes=int(num_classes)
     )
+    t.add('Binned tile values computed.')
 
     # Get the image
     im_binned = TileHelper.get_tile_image(
@@ -179,6 +185,7 @@ def _build_tile_binned(tile_request: models.TileRequest,
         tile_mask=None,
         brightness=tile_request.brightness
     )
+    t.add('Binned tile image created.')
 
     # Draw tile debug information
     imdraw = ImageDraw.Draw(im_binned)
@@ -189,6 +196,7 @@ def _build_tile_binned(tile_request: models.TileRequest,
             f'zoom:{tile_request.tile_zoom} x:{str(tile_request.tile_x)} y:{str(tile_request.tile_y)}',
             (255, 255, 255)
         )
+        t.add('Binned tile debug values rendered.')
 
     # Return
     return im_binned
@@ -708,6 +716,8 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
     global num_classes
     query: models.RepoQuery  # = None
     request_ctr += 1
+    t = Timing()
+    t.add('get_tile_image() requested.', request.args)
     # print('Request ' + str(request_ctr))
     # print (str(request.args))
 
@@ -839,6 +849,8 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         # tile_mask = tile.TileHelper.get_circle_mask(ts.tile_size, num_bins)
         tile_mask = None
 
+    t.add('Initialisation finished.')
+
     # Run the query and get the sequence data.
     # (this data will typically be pre-cached by the query engine due to the
     # original user request).
@@ -853,6 +865,8 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         split_by_facet=True,
         allow_cached_report=True
     )
+    t.add('Dataset loaded.')
+
 
     # Get query hash from the report
     query_hash = report['query_hash']
@@ -883,6 +897,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         kde_rel_row_name=kde_rel_row_name,
         kde_rel_col_name=kde_rel_col_name
     )
+    t.add('Tile request created.')
 
     async def async_generator():
 
@@ -892,6 +907,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
             tile_request.facet_row_value,
             tile_request.facet_col_value
         )]
+        t.add('Facet data selected.')
 
         # Default to False
         invert_values = False
@@ -910,10 +926,12 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
                 world_y=cfg.column_plot_y,
                 world_value=cfg.column_value
             )
+            t.add('KDE Tileset loaded from KDE Manager.', {'tileset_cached': tileset_cached})
 
             # Get the KDEItem from the KDETileSet
             kde_items_d = kde_tileset.kde_items
             kde_item = kde_items_d[(facet_row_value, facet_col_value)]
+            t.add('KDE Item extracted from Tileset.')
 
             # Get the min-max ranges
             if not kde_tileset.kde_diff_similar_minmax_computed:
@@ -929,6 +947,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
             else:
                 raise Exception(
                     f'Unexpected tile type: {tile_request.tile_type}')
+            t.add('Min-max range obtained.')
 
             # Produce an image from the kde matrix values
             # TODO: Cache min/max?
@@ -942,10 +961,12 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
                 invert_values=tile_request.kde_colormap_invert,
                 cmap=tile_request.kde_colormap
             )
+            t.add('KDE image created.')
 
             # Convert to RGBA
             # (previously needed alpha channel for compositing)
             im = im_kde.convert('RGBA')
+            t.add('KDE converted to RGBA.')
 
         # Get 2D histogram / binned image
         elif tile_request.tile_type == 'BINNED':
@@ -957,9 +978,9 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
                 cfg=cfg,
                 num_bins=tile_request.num_bins,
                 num_classes=num_classes,
-                class_rgb=class_rgb
+                class_rgb=class_rgb,
+                t=t
             )
-
         else:
             raise ValueError(f'Unexpected tile_type: {tile_type}')
 
@@ -967,6 +988,9 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         # im.save('my_image.png', format='png')
         with io.BytesIO() as output:
             im.save(output, format='PNG')
+            t.add('Tile image written (BytesIO).')
+            if cfg.tile_debug:
+                print(json.dumps(t, default=vars, indent=2, sort_keys=True))
             yield output.getvalue()
 
     return async_generator(), 200, {'content-type': 'image/png'}
