@@ -412,8 +412,16 @@ class DataRepo:
             facet row and column.
         """
 
-        d = dict(tuple(df.groupby(by=[facet_row_column, facet_col_column])))
-        return d
+        # Apply group by
+        df_grouped = df.groupby(by=[facet_row_column, facet_col_column])
+
+        # Place in dictionary
+        # key = Tuple('row_value', 'col_value')
+        # value = DataFrame subset for facet
+        df_dict = {group_name: group for group_name, group in df_grouped}
+
+        # Return
+        return df_dict
 
     @staticmethod
     def filter_by_facet(df: pd.DataFrame,
