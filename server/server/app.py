@@ -9,6 +9,7 @@ from quart import make_response
 from quart_cors import cors
 from quart import Response
 from quart import request
+from quart import send_from_directory
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -61,6 +62,14 @@ request_ctr = 0
 kde_manager = KDEManager()
 cfg = config.AppConfig()
 env_name = cfg.default_environment
+
+
+def _static_folder():
+    """
+    Get static folder path
+    """
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static')
+
 
 def _compute_seq_coords(env_name: str, seq_list_text: str, cfg: config.AppConfig, scaler_xy) -> List[Dict]:
     """
@@ -204,7 +213,15 @@ def _build_tile_binned(tile_request: models.TileRequest,
 
 # %% Routes
 @app.route('/')
+async def home():
+    """Home/application page (index.html)"""
+    static_folder = _static_folder()
+    return await send_from_directory(static_folder, 'index.html')
+
+
+@app.route('/sys/hello/')
 async def hello():
+    """Test endpoint"""
     return "Welcome to AIRR Map."
 
 
@@ -867,7 +884,6 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
     )
     t.add('Dataset loaded.')
 
-
     # Get query hash from the report
     query_hash = report['query_hash']
 
@@ -926,7 +942,8 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
                 world_y=cfg.column_plot_y,
                 world_value=cfg.column_value
             )
-            t.add('KDE Tileset loaded from KDE Manager.', {'tileset_cached': tileset_cached})
+            t.add('KDE Tileset loaded from KDE Manager.',
+                  {'tileset_cached': tileset_cached})
 
             # Get the KDEItem from the KDETileSet
             kde_items_d = kde_tileset.kde_items
@@ -1030,9 +1047,7 @@ def get_xy_scaler() -> MinMaxScaler:
 
 
 # %% Main
-#if __name__ == '__main__':
-
-
+# if __name__ == '__main__':
 
 
 # Init
@@ -1058,6 +1073,6 @@ from werkzeug.middleware.profiler import ProfilerMiddleware
 # app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5], profile_dir='./profile')
 
 if __name__ == '__main__':
-    #app.run(debug=True)
-    #app.run(debug=False)  # , host='0.0.0.0')
+    # app.run(debug=True)
+    # app.run(debug=False)  # , host='0.0.0.0')
     app.run(debug=False, host='0.0.0.0')
