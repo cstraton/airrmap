@@ -5,7 +5,19 @@
         "zoom": {
             "smoothSensitivity": 2.0
         }
-
+    },
+    "tooltips": {
+        "mouseEnterDelay": 500,
+        "mouseLeaveDelay": 250,
+        "toolbar": {
+            "sidebar": "Toggle the sidebar.",
+            "sync": "Toggle synchronised navigation and selections. If enabled, reports will include all subplots, otherwise only the selected subplot will be included.",
+            "grid": "Toggle the grid layer.",
+            "stats": "Toggle the statistics layer.",
+            "selectDraw": "Toggle draw mode. Hold the mouse button to draw a selection and release at any point to finish. Click inside the area to load a report.",
+            "selectUndo": "Undo the last selection.",
+            "selectRemoveAll": "Remove all selections.",
+            "report": "Show the last report."
+        }
     }
-
 }

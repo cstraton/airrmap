@@ -4,7 +4,7 @@ import './index.css';
 
 import {
   Button, Container, Grid, Header, Icon, Menu, Modal,
-  Segment, Sidebar, Tab
+  Popup, Segment, Sidebar, Tab
 } from 'semantic-ui-react';
 
 import usePersistedState from "./assets/components/persisted_state"
@@ -400,7 +400,7 @@ function App(props) {
           menuItem: { key: 'filters1', content: 'Data' },
           render: () =>
             <Tab.Pane key='filters-pane' className={'no-border'}>
-              <FilterSelection2 
+              <FilterSelection2
                 submitHandler={submitFiltersHandler}
                 appStatusLoading={appStatusLoading}
               />
@@ -501,7 +501,14 @@ function App(props) {
           active={sidebarVisible}
           onClick={() => setSidebarVisible(!(sidebarVisible))}
         >
-          <Icon className='bi bi-list' />
+          <Popup
+            content={CONFIG.tooltips.toolbar.sidebar}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Icon className='bi bi-list' />
+            }
+          />
         </Menu.Item>
 
         {/* App name */}
@@ -511,26 +518,47 @@ function App(props) {
 
         {/* Sync button */}
         <Menu.Item position='right'>
-          <Button icon labelPosition='left' toggle active={mapSync} onClick={() => setMapSync(!(mapSync))}>
-            <Icon className='bi bi-arrow-left-right' />
-            Sync
-          </Button>
+          <Popup
+            content={CONFIG.tooltips.toolbar.sync}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Button icon labelPosition='left' toggle active={mapSync} onClick={() => setMapSync(!(mapSync))}>
+                <Icon className='bi bi-arrow-left-right' />
+                Sync
+              </Button>
+            }
+          />
         </Menu.Item>
 
         {/* Grid button */}
         <Menu.Item>
-          <Button icon labelPosition='left' toggle active={mapGridEnabled} onClick={() => setMapGridEnabled(!(mapGridEnabled))}>
-            <Icon className='bi bi-grid-3x3' />
-            Grid
-          </Button>
+          <Popup
+            content={CONFIG.tooltips.toolbar.grid}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Button icon labelPosition='left' toggle active={mapGridEnabled} onClick={() => setMapGridEnabled(!(mapGridEnabled))}>
+                <Icon className='bi bi-grid-3x3' />
+                Grid
+              </Button>
+            }
+          />
         </Menu.Item>
 
         {/* Stats button */}
         <Menu.Item>
-          <Button icon labelPosition='left' toggle active={mapStatsEnabled} onClick={() => setMapStatsEnabled(!(mapStatsEnabled))}>
-            <Icon className='bi bi-text-indent-left' />
-            Stats
-          </Button>
+          <Popup
+            content={CONFIG.tooltips.toolbar.stats}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Button icon labelPosition='left' toggle active={mapStatsEnabled} onClick={() => setMapStatsEnabled(!(mapStatsEnabled))}>
+                <Icon className='bi bi-text-indent-left' />
+                Stats
+              </Button>
+            }
+          />
         </Menu.Item>
 
         {/* Area select toggle */}
@@ -539,7 +567,14 @@ function App(props) {
           active={selectEnabled}
           onClick={() => setSelectEnabled(!(selectEnabled))}
         >
-          <Icon className='bi bi-pen' />
+          <Popup
+            content={CONFIG.tooltips.toolbar.selectDraw}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Icon className='bi bi-pen' />
+            }
+          />
         </Menu.Item>
 
         {/* Remove last selection */}
@@ -547,7 +582,14 @@ function App(props) {
           name='Remove last selection'
           onClick={() => mapController.onAreaSelectRemoveLast()}
         >
-          <Icon className='bi bi-arrow-counterclockwise' />
+          <Popup
+            content={CONFIG.tooltips.toolbar.selectUndo}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Icon className='bi bi-arrow-counterclockwise' />
+            }
+          />
         </Menu.Item>
 
         {/* Remove all selections */}
@@ -555,7 +597,14 @@ function App(props) {
           name='Remove all selections'
           onClick={() => mapController.onAreaSelectClear()}
         >
-          <Icon className='bi bi-x' />
+          <Popup
+            content={CONFIG.tooltips.toolbar.selectRemoveAll}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Icon className='bi bi-x' />
+            }
+          />
         </Menu.Item>
 
         {/* Show report */}
@@ -564,7 +613,14 @@ function App(props) {
           active={roiReportOpen}
           onClick={() => setROIReportOpen(!(roiReportOpen))}
         >
-          <Icon className='bi bi-bar-chart-fill' />
+          <Popup
+            content={CONFIG.tooltips.toolbar.report}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Icon className='bi bi-bar-chart-fill' />
+            }
+          />
         </Menu.Item>
 
         {/* App status*/}
