@@ -93,6 +93,7 @@ function LeafletItem({
         crs={CRS.Simple}
         smFacetRowValue={facetRowValue} // Store props in map container. Used for facet roi queries.
         smFacetColValue={facetColValue} // sm prefix to prevent conflicts with Leaflet.
+        tap={false} // Workaround for region/polygon click being triggered twice. Related to https://github.com/Leaflet/Leaflet/issues/7255.
         whenCreated={setMap} // Store map instance
       >
         {binnedEnabled ? <LayerBinnedTile mapController={mapController} facetRowValue={facetRowValue} facetColValue={facetColValue} setBinnedLoading={setBinnedLoading} /> : null}
