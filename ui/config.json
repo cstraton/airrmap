@@ -7,8 +7,24 @@
         }
     },
     "tooltips": {
-        "mouseEnterDelay": 500,
+        "mouseEnterDelay": 600,
         "mouseLeaveDelay": 250,
+        "sidebar": {
+            "data": {
+                "submit": "Load the environment and/or apply facet and filter settings.",
+                "filterSingleRemove": "Remove this filter.",
+                "filterSingleAdd": "Add a filter.",
+                "filterAllRemove": "Remove all filters."
+            },
+            "rendering": {
+                "heatmap": {},
+                "kde": {}
+            },
+            "selection": {},
+            "search": {
+                "submit": "Compute the location of these sequences on the map."
+            }
+        },
         "toolbar": {
             "sidebar": "Toggle the sidebar.",
             "sync": "Toggle synchronised navigation and selections. If enabled, reports will include all subplots, otherwise only the selected subplot will be included.",

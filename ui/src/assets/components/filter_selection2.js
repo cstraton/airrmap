@@ -7,7 +7,8 @@ import {
   Form,
   Header,
   Icon,
-  Input
+  Input,
+  Popup
 } from 'semantic-ui-react'
 import CONFIG from '../../../config.json';
 
@@ -216,7 +217,14 @@ class FilterSelection2 extends Component {
             selection
             onChange={this.handleChange}
           />
-          <Form.Button content='Submit' loading={this.props.appStatusLoading} />
+          <Popup
+            content={CONFIG.tooltips.sidebar.data.submit}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Form.Button content='Submit' loading={this.props.appStatusLoading} />
+            }
+          />
         </Form.Group>
 
         {/* Facet row/column */}
@@ -268,16 +276,36 @@ class FilterSelection2 extends Component {
               onChange={(e, data) => this.filterChange(e, data, index, false)}
             />
             {/* Remove single filter button */}
-            <Button icon
-              key={'filterRemove'}
-              onClick={(e) => this.filterRemove(e, index)}>
-              <Icon name='close' />
-            </Button>
-
+            <Popup
+              content={CONFIG.tooltips.sidebar.data.filterSingleRemove}
+              mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+              mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+              trigger={
+                <Button icon
+                  key={'filterRemove'}
+                  onClick={(e) => this.filterRemove(e, index)}>
+                  <Icon name='close' />
+                </Button>
+              }
+            />
           </Form.Group>
         ))}
-        <Button icon onClick={this.filterAdd}><Icon name='add' /></Button>
-        <Button icon onClick={this.filterRemoveAll}><Icon name='close' /></Button>
+        <Popup
+          content={CONFIG.tooltips.sidebar.data.filterSingleAdd}
+          mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+          mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+          trigger={
+            <Button icon onClick={this.filterAdd}><Icon name='add' /></Button>
+          }
+        />
+        <Popup
+          content={CONFIG.tooltips.sidebar.data.filterAllRemove}
+          mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+          mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+          trigger={
+            <Button icon onClick={this.filterRemoveAll}><Icon name='close' /></Button>
+          }
+        />
       </Form>
     )
   }
