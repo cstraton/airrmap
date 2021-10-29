@@ -5,7 +5,7 @@ import { Loader } from 'semantic-ui-react';
 import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, ImageOverlay, Pane, useMap } from 'react-leaflet';
 import '../js/vendor/leaflet.area_select/leaflet.area_select.js'; // Area selection
-import '../js/vendor/Leaflet.SmoothWheelZoom/SmoothWheelZoom.js'; // Smooth wheel zooming
+//import '../js/vendor/Leaflet.SmoothWheelZoom/SmoothWheelZoom.js'; // Smooth wheel zooming
 import '../js/vendor/L.SimpleGraticule/L.SimpleGraticule.js'; // Grid of coordinates
 import '../js/vendor/L.SimpleGraticule/L.SimpleGraticule.css';
 import { CRS } from 'leaflet';
@@ -81,15 +81,25 @@ function LeafletItem({
         inertia={true}
         attributionControl={false}
         fadeAnimation={true}
-        //zoomAnimation={true}
-        zoomSnap={0}
+
+        // --- SmoothWheelZoom plugin ---
+
+        // Remember to comment/uncomment Leaflet.SmoothWheelZoom
+        // import statement (top of module)
+
+        // No SmoothWheelZoom
+        zoomSnap={1.0} // Controls zoom level jumping
+        zoomAnimation={true}
         //zoomDelta={1}
         //wheelPxPerZoomLevel={60/1}
-        // --- SmoothWheelZoom plugin ---
-        scrollWheelZoom={false}
-        smoothWheelZoom={true}
-        smoothSensitivity={CONFIG.mapItem.zoom.smoothSensitivity}
+        scrollWheelZoom={true}
+
+        // For SmoothWheelZoom
+        //scrollWheelZoom={false}
+        //smoothWheelZoom={true}
+        //smoothSensitivity={CONFIG.mapItem.zoom.smoothSensitivity}
         // --------------------------
+
         crs={CRS.Simple}
         smFacetRowValue={facetRowValue} // Store props in map container. Used for facet roi queries.
         smFacetColValue={facetColValue} // sm prefix to prevent conflicts with Leaflet.
