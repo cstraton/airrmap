@@ -2,3 +2,4 @@
 **/.parcel-cache
 **/dist
 **/__pycache__
+*.pem
