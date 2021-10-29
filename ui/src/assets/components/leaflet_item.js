@@ -134,9 +134,9 @@ function LeafletItem({
           setMapStatsEnabled={setMapStatsEnabled}
           setMapGridEnabled={setMapGridEnabled}
         /> : null
-
         }
-        <Loader active={KDELoading || BinnedLoading} />
+        {/* Only show for KDE - too distracting for progressive heatmap layer */}
+        <Loader active={KDELoading}/>
       </React.Fragment>
     );
   }
