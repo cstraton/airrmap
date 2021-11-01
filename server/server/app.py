@@ -548,7 +548,7 @@ async def get_polyroi_summary():
     # TODO: Make configurable.
     # NOTE: Region should not contain chain letter ('cdr1' not 'cdrh1').
     # regions = env_config['anchor']['regions']
-    regions = ['cdr1', 'cdr2', 'cdr3', 'cdr1-2']
+    regions = ['cdr1', 'cdr2', 'cdr3'] #, 'cdr1-2']
 
     async def async_generator():
 
@@ -623,11 +623,11 @@ async def get_polyroi_summary():
 
         # Add on cdr1-2 concatenated gapped sequence
         # TODO: Remove if no longer required
-        df_records['seq_gapped_cdr1-2'] = df_records.apply(
-            lambda row: row['seq_gapped_cdr1'] + row['seq_gapped_cdr2'],
-            axis='columns'
-        )
-        t.add('Added cdr1-2 concatenated field.')
+        #df_records['seq_gapped_cdr1-2'] = df_records.apply(
+        #    lambda row: row['seq_gapped_cdr1'] + row['seq_gapped_cdr2'],
+        #    axis='columns'
+        #)
+        #t.add('Added cdr1-2 concatenated field.')
 
         # Create the report
         report = reporting.get_summary_report(

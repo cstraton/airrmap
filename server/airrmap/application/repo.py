@@ -1251,8 +1251,7 @@ class DataRepo:
             x_tf='float32',
             y_tf='float32',
         )
-        for col_name, dtype in column_size_convert.items():
-            df[col_name] = df[col_name].astype(dtype)
+        df = df.astype(column_size_convert)
         t.add("Changed column data types (reduce memory usage).")
 
         # TODO: Temporay, remove
