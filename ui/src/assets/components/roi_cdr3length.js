@@ -154,7 +154,7 @@ export default function ROICDR3Length({ report, section_name, facetRowValues, fa
     //autosize: true,
     //width: 1500,
     //height: 480,
-    title: 'CDR3 length',
+    //title: 'CDR3 length',
     //xaxis1: {
     //  type: '-', // Default, auto (e.g. 'linear', 'category')
     //  title: 'Column1' 

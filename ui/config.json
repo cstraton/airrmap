@@ -7,8 +7,8 @@
         }
     },
     "tooltips": {
-        "mouseEnterDelay": 600,
-        "mouseLeaveDelay": 250,
+        "mouseEnterDelay": 800,
+        "mouseLeaveDelay": 1,
         "sidebar": {
             "data": {
                 "submit": "Load the environment and/or apply facet and filter settings.",

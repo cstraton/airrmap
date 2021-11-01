@@ -3,7 +3,7 @@ import 'fomantic-ui-css/semantic.css';
 import './index.css';
 
 import {
-  Button, Container, Grid, Header, Icon, Menu, Modal,
+  Button, Container, Icon, Menu, Modal,
   Popup, Segment, Sidebar, Tab
 } from 'semantic-ui-react';
 
@@ -57,7 +57,7 @@ function App(props) {
   const [markerItems, _setMarkerItems] = useState([]); // Map marker items
 
   // Status message
-  const [appStatusMessage, setAppStatusMessage] = useState(''); // Status message
+  const [appStatusMessage, setAppStatusMessage] = useState('Welcome to AIRR Map.'); // Status message
   const [appStatusHidden, setAppStatusHidden] = useState(false); // True/False
   const [appStatusType, setAppStatusType] = useState('warning'); // 'none', 'info', 'warning', 'error', 'positive'
   const [appStatusLoading, setAppStatusLoading] = useState(false); // true or false
@@ -444,7 +444,7 @@ function App(props) {
         },
         {
           // ROI Selection
-          menuItem: { key: 'roi-report', content: 'ROI-Select' },
+          menuItem: { key: 'roi-report', content: 'Selection' },
           render: () =>
             <Tab.Pane key='roi-report-pane' className={'no-border'}>
               <ROIReport
@@ -458,7 +458,7 @@ function App(props) {
         },
         {
           // Sequence locator list
-          menuItem: { key: 'seq-locator', content: 'Search' },
+          menuItem: { key: 'seq-locator', content: 'Markers' },
           render: () =>
             <Tab.Pane key='seq-locator-pane' className={'no-border'}>
               <SeqLocator
@@ -474,165 +474,165 @@ function App(props) {
 
   function RenderStatus({ appStatusLoading, appStatusType, appStatusMessage }) {
     return (
-      <Container text textAlign='right'>
-        {/* Loading icon */}
-        {appStatusLoading ?
-          <Icon
-            name={appStatusLoading ? 'circle notched' : ''}
-            loading={appStatusLoading}
-          />
-          : null
+      <Popup
+        content={appStatusMessage}
+        mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+        mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+        trigger={
+          <span className='toolbar-status-inner'>
+            {appStatusMessage}
+          </span>
         }
-        {/* Message */}
-        {appStatusMessage}
-      </Container>
-    )
+      />
+    );
   }
 
   function RenderTopHeader() {
     return (
       //Top Menu 
-      <Menu className={'no-margin'} color={'grey'} inverted size={'tiny'}>
+      <div className={'toolbar-top-outer'}>
+        <div className={'toolbar-top-inner'}>
+          <Menu className={'no-margin'} size={'tiny'} color={'green'} compact>
 
-        {/* Sidebar visibility */}
-        <Menu.Item
-          name='Show Sidebar'
-          toggle
-          active={sidebarVisible}
-          onClick={() => setSidebarVisible(!(sidebarVisible))}
-        >
-          <Popup
-            content={CONFIG.tooltips.toolbar.sidebar}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Icon className='bi bi-list' />
-            }
-          />
-        </Menu.Item>
+            {/* Sidebar visibility */}
+            <Menu.Item
+              name='Show Sidebar'
+              toggle
+              active={sidebarVisible}
+              onClick={() => setSidebarVisible(!(sidebarVisible))}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.sidebar}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-list' />
+                }
+              />
+            </Menu.Item>
 
-        {/* App name */}
-        <Menu.Item
-          name='AIRR Map'
-        />
+            {/* App name */}
+            <Menu.Item
+              name='AIRR Map'
+            />
 
-        {/* Sync button */}
-        <Menu.Item position='right'>
-          <Popup
-            content={CONFIG.tooltips.toolbar.sync}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Button icon labelPosition='left' toggle active={mapSync} onClick={() => setMapSync(!(mapSync))}>
-                <Icon className='bi bi-arrow-left-right' />
-                Sync
-              </Button>
-            }
-          />
-        </Menu.Item>
+            {/* Sync button */}
+            <Menu.Item>
+              <Popup
+                content={CONFIG.tooltips.toolbar.sync}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Button icon labelPosition='left' toggle active={mapSync} onClick={() => setMapSync(!(mapSync))}>
+                    <Icon className='bi bi-arrow-left-right' />
+                    Sync
+                  </Button>
+                }
+              />
+            </Menu.Item>
 
-        {/* Grid button */}
-        <Menu.Item>
-          <Popup
-            content={CONFIG.tooltips.toolbar.grid}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Button icon labelPosition='left' toggle active={mapGridEnabled} onClick={() => setMapGridEnabled(!(mapGridEnabled))}>
-                <Icon className='bi bi-grid-3x3' />
-                Grid
-              </Button>
-            }
-          />
-        </Menu.Item>
+            {/* Grid button */}
+            <Menu.Item>
+              <Popup
+                content={CONFIG.tooltips.toolbar.grid}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Button icon labelPosition='left' toggle active={mapGridEnabled} onClick={() => setMapGridEnabled(!(mapGridEnabled))}>
+                    <Icon className='bi bi-grid-3x3' />
+                    Grid
+                  </Button>
+                }
+              />
+            </Menu.Item>
 
-        {/* Stats button */}
-        <Menu.Item>
-          <Popup
-            content={CONFIG.tooltips.toolbar.stats}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Button icon labelPosition='left' toggle active={mapStatsEnabled} onClick={() => setMapStatsEnabled(!(mapStatsEnabled))}>
-                <Icon className='bi bi-text-indent-left' />
-                Stats
-              </Button>
-            }
-          />
-        </Menu.Item>
+            {/* Stats button */}
+            <Menu.Item>
+              <Popup
+                content={CONFIG.tooltips.toolbar.stats}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Button icon labelPosition='left' toggle active={mapStatsEnabled} onClick={() => setMapStatsEnabled(!(mapStatsEnabled))}>
+                    <Icon className='bi bi-text-indent-left' />
+                    Stats
+                  </Button>
+                }
+              />
+            </Menu.Item>
 
-        {/* Area select toggle */}
-        <Menu.Item
-          name='Enable area select'
-          active={selectEnabled}
-          onClick={() => setSelectEnabled(!(selectEnabled))}
-        >
-          <Popup
-            content={CONFIG.tooltips.toolbar.selectDraw}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Icon className='bi bi-pen' />
-            }
-          />
-        </Menu.Item>
+            {/* Area select toggle */}
+            <Menu.Item
+              name='Enable area select'
+              active={selectEnabled}
+              onClick={() => setSelectEnabled(!(selectEnabled))}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.selectDraw}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-pen' />
+                }
+              />
+            </Menu.Item>
 
-        {/* Remove last selection */}
-        <Menu.Item
-          name='Remove last selection'
-          onClick={() => mapController.onAreaSelectRemoveLast()}
-        >
-          <Popup
-            content={CONFIG.tooltips.toolbar.selectUndo}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Icon className='bi bi-arrow-counterclockwise' />
-            }
-          />
-        </Menu.Item>
+            {/* Remove last selection */}
+            <Menu.Item
+              name='Remove last selection'
+              onClick={() => mapController.onAreaSelectRemoveLast()}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.selectUndo}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-arrow-counterclockwise' />
+                }
+              />
+            </Menu.Item>
 
-        {/* Remove all selections */}
-        <Menu.Item
-          name='Remove all selections'
-          onClick={() => mapController.onAreaSelectClear()}
-        >
-          <Popup
-            content={CONFIG.tooltips.toolbar.selectRemoveAll}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Icon className='bi bi-x' />
-            }
-          />
-        </Menu.Item>
+            {/* Remove all selections */}
+            <Menu.Item
+              name='Remove all selections'
+              onClick={() => mapController.onAreaSelectClear()}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.selectRemoveAll}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-x' />
+                }
+              />
+            </Menu.Item>
 
-        {/* Show report */}
-        <Menu.Item
-          name='Show report'
-          active={roiReportOpen}
-          onClick={() => setROIReportOpen(!(roiReportOpen))}
-        >
-          <Popup
-            content={CONFIG.tooltips.toolbar.report}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Icon className='bi bi-bar-chart-fill' />
-            }
-          />
-        </Menu.Item>
-
-        {/* App status*/}
-        <Menu.Item position='right'>
-          <RenderStatus
-            appStatusLoading={appStatusLoading}
-            appStatusType={appStatusType}
-            appStatusMessage={appStatusMessage}
-          />
-        </Menu.Item>
-
-      </Menu >
+            {/* Show report */}
+            <Menu.Item
+              name='Show report'
+              active={roiReportOpen}
+              onClick={() => setROIReportOpen(!(roiReportOpen))}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.report}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-bar-chart-fill' />
+                }
+              />
+            </Menu.Item>
+            <Menu.Item>
+              {/* Status */}
+              <RenderStatus
+                appStatusLoading={appStatusLoading}
+                appStatusType={appStatusType}
+                appStatusMessage={appStatusMessage}
+              />
+            </Menu.Item>
+          </Menu >
+        </div>
+      </div>
     );
   }
 
@@ -648,35 +648,30 @@ function App(props) {
         {/* The top header */}
         <RenderTopHeader />
 
-        <Grid columns={1} >
+        {/* Left Sidebar */}
+        {/* Adapted from: https://react.semantic-ui.com/modules/sidebar/#states-visible */}
+        <Sidebar.Pushable className={'no-margin no-border'} as={Segment}>
+          <Sidebar
+            as={Segment}
+            animation={'scale down'}
+            visible={sidebarVisible}
+            width={'very wide'}
+          >
+            {/*Tab Container */}
+            <Tab menu={{ secondary: true, pointing: true, color: 'blue' }} panes={RenderPanes()} renderActiveOnly={true} />
+          </Sidebar>
 
-          {/* Left Sidebar */}
-          {/* Adapted from: https://react.semantic-ui.com/modules/sidebar/#states-visible */}
-          <Grid.Column width={16}>
-            <Sidebar.Pushable className={'no-margin no-border'} as={Segment}>
-              <Sidebar
-                as={Segment}
-                animation={'overlay'}
-                visible={sidebarVisible}
-                width={'very wide'}
-              >
-                {/*Tab Container */}
-                <Tab menu={{ secondary: true, pointing: true, color: 'blue' }} panes={RenderPanes()} renderActiveOnly={true} />
-              </Sidebar>
-
-              {/* Right Map Grid */}
-              <Sidebar.Pusher>
-                <LeafletGrid
-                  key='leaflet-grid-main'
-                  mapController={mapController}
-                  facetRowValues={facetRowValues}
-                  facetColValues={facetColValues}
-                  queryReport={queryReport}
-                />
-              </Sidebar.Pusher>
-            </Sidebar.Pushable>
-          </Grid.Column>
-        </Grid>
+          {/* Right Map Grid */}
+          <Sidebar.Pusher>
+            <LeafletGrid
+              key='leaflet-grid-main'
+              mapController={mapController}
+              facetRowValues={facetRowValues}
+              facetColValues={facetColValues}
+              queryReport={queryReport}
+            />
+          </Sidebar.Pusher>
+        </Sidebar.Pushable>
       </Container>
     );
   }

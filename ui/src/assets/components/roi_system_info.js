@@ -22,7 +22,7 @@ export default function ROISystemInformation({ report, section_name, setAppStatu
   // Render the report
   return (
     <Container fluid>
-      <Header as='h2'>System Information</Header>
+      {/*<Header as='h2'>System Information</Header>*/}
       <p>
         <pre>
         {reportDebugFormatted}

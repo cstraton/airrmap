@@ -152,7 +152,7 @@ export default function ROIVDJ({ report, section_name, facetRowValues, facetColV
     //autosize: true,
     //width: 1500,
     //height: 800,
-    title: reportTitle,
+    //title: reportTitle,
     xaxis: {
       type: 'category',
       title: ''
