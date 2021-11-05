@@ -27,6 +27,7 @@ class AppConfig():
         """
         self.base_path: str = ''
         self.index_db: str = ''
+        self.oas_list: str = '' # OAS Data Unit listing
         self.default_environment: str = ''
         self.tile_debug: bool = False
         self.loaded: bool = False
@@ -51,6 +52,7 @@ class AppConfig():
             config = yaml.load(f, Loader=yaml.FullLoader)
             self.base_path = config['base_path']
             self.index_db = os.path.join(self.base_path, config['index_db'])
+            self.oas_list = os.path.join(self.base_path, 'oas_listing.csv')
             self.default_environment = config['default_environment']
             self.tile_debug = config['tile_debug']
 
