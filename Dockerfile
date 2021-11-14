@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 RUN npm install npm@latest -g && \
     npm install n -g && \
     n latest  
-RUN npm install -g parcel@2.0.0-rc.0
+#RUN npm install -g parcel@2.0.0
 
 # Copy across ui source files
 COPY ui /ui
@@ -25,8 +25,9 @@ RUN npm install
 # Parcel compile to server/static folder
 WORKDIR /
 RUN mkdir /tmp/build_ui
-RUN npx parcel build ui/src/index.html --no-scope-hoist --dist-dir /tmp/build_ui
 
+#RUN npx parcel build ui/src/index.html --no-scope-hoist --dist-dir /tmp/build_ui 
+COPY server/server/static /tmp/build_ui
 
 # ---- Server (Stage 2) ----
 
