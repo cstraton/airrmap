@@ -25,6 +25,8 @@ from airrmap.shared.models import RepoQuery
 from airrmap.shared.cache import Cache
 
 # %% Define class
+
+
 class DataRepo:
 
     # Elements for query cache tuple
@@ -39,7 +41,8 @@ class DataRepo:
         """
         self.cfg: config.AppConfig = cfg
         self._query_cache: OrderedDict = OrderedDict()
-        self.query_cache_size = 1 # TODO: Make configurable, max number of query results to store in memory
+        # TODO: Make configurable, max number of query results to store in memory
+        self.query_cache_size = 1
         self._report_cache: Cache = Cache(self.query_cache_size)
 
     @staticmethod
@@ -235,13 +238,13 @@ class DataRepo:
                          xy_lasso: List[List[float]],
                          fields: List[str] = [],
                          t: Timing = Timing(),
-                         facet_row_value: str='',
-                         facet_col_value: str='') -> pd.DataFrame:
+                         facet_row_value: str = '',
+                         facet_col_value: str = '') -> pd.DataFrame:
         """
         Load the data to be used in region-of-interest reports.
 
-        Reports may require additional fields that are not loaded into the 
-        'coords' DataFrame (which is kept slim to improve speed/reduce memory consumption). 
+        Reports may require additional fields that are not loaded into the
+        'coords' DataFrame (which is kept slim to improve speed/reduce memory consumption).
         Additionally, this method filters records to a selected region.
 
         Process
@@ -315,18 +318,18 @@ class DataRepo:
         # Get the coordinates
         # Will usually be cached, as report usually requested after a query run.
         df_coords, report, d_query_data_split = data_repo.run_coords_query(
-            cfg=cfg, 
+            cfg=cfg,
             query=query.to_dict(),
             split_by_facet=True,
             allow_cached_report=True,
-            t = None)
+            t=None)
         t.add('Run coords query.')
 
         # If facet provided, then just get the data for that facet.
         if facet_row_value != NOT_SELECTED and \
-            facet_col_value != NOT_SELECTED:
+                facet_col_value != NOT_SELECTED:
             facet_key_tuple = (facet_row_value, facet_col_value)
-            #df_coords = df_coords[(df_coords['facet_row'] == facet_row_value) & (df_coords['facet_col']==facet_col_value)].copy()
+            # df_coords = df_coords[(df_coords['facet_row'] == facet_row_value) & (df_coords['facet_col']==facet_col_value)].copy()
             df_coords = d_query_data_split[facet_key_tuple]
 
         # Filter to records in rectangular region
@@ -476,6 +479,8 @@ class DataRepo:
             end_time: float,
             value1_field: str,
             value2_field: str,
+            value2_cat_count: int,
+            value2_cat_supported: int,
             status_message='',
             is_facet_row=False,
             facet_row_property_level='',
@@ -492,7 +497,7 @@ class DataRepo:
 
         Designed to show query information to the client
         and support application functionality such as
-        the facet grid row/column values and the 
+        the facet grid row/column values and the
         min-max range for 2D histogram rendering.
 
 
@@ -529,6 +534,13 @@ class DataRepo:
 
         value2_field : str
             The field used for value 2.
+
+        value2_cat_count : int
+            The number of value2 categories.
+
+        value2_cat_supported: int
+            The maximum number of value2 categories supported
+            (e.g. number of heatmap colours supported).
 
         status_message : str, optional
             General message to be returned to client, by default ''.
@@ -567,7 +579,6 @@ class DataRepo:
             List of values for the facet column field, in required
             sort order, for example ['hour-1', 'day-1']
 
-
         Returns
         -------
         Dict
@@ -601,6 +612,17 @@ class DataRepo:
         report['value1_max'] = float(df['value1'].max())
         report['value1_min'] = float(df['value1'].min())
         report['value2_field'] = value2_field
+        report['value2_cat_count'] = value2_cat_count
+        report['value2_cat_supported'] = value2_cat_supported
+
+        # If maximum number of value2 categories exceeded...
+        if value2_cat_count > value2_cat_supported:
+            report['success'] = False
+            report['status_message'] = ' '.join([
+                report['status_message'],
+                f'Number of categories ({value2_cat_count}) exceeds maximum supported ({value2_cat_supported}). ' +
+                'Heatmap incomplete! Change Heatmap Colour selection.'
+            ])
 
         # Facet delim (e.g. 'row||col')
         report['facet_key_delim'] = FACET_KEY_DELIM
@@ -672,7 +694,8 @@ class DataRepo:
             split_by_facet=False,
             allow_cached_report=False,
             t: Timing = None,
-            ) -> Tuple:
+            value2_cat_supported=9
+    ) -> Tuple:
         """
         Run a user query in the given environment.
 
@@ -729,7 +752,13 @@ class DataRepo:
         t : Timing (Optional)
             Timing information will be added if supplied.
             By default, False.
-            
+
+        value2_cat_supported : int (Optional)
+            Maximum number of value2 categories supported
+            (e.g. maximum number of colours supported for heatmap).
+            A warning/error status is returned in the query report if
+            this value is exceeded. By default, 9.
+
         Returns
         -------
         pd.DataFrame
@@ -756,6 +785,7 @@ class DataRepo:
             'value2_field': 'v', # Pass '' or exclude if not used, will use default in envconfig.yaml
             'facet_col': 'f.Longitudinal',  # Pass '' or exclude if not used
             'facet_row': 'f.Subject',       # Pass '' or exclude if not used
+            'color_field' : 'r.v',          # Pass '' or exclude if not used
             'filters': [
                 {'filter_name': 'f.Chain', 'filter_value': 'Heavy' },   # f. = file level
                 {'filter_name': 'f.BSource', 'filter_value': 'PBMC'},   # f. = file level 
@@ -775,11 +805,16 @@ class DataRepo:
         FILTER_NAME = 'filter_name'
         FILTER_VALUE = 'filter_value'
         NOT_SPECIFIED = ''
+        # Don't end messages with full stop (will be added by status_message_sep)
+        status_messages: List[str] = []
+        status_message_sep = '. '
         t.add("Start of query process.")
 
         # Get the selected filters and env config
         env_name = query['env_name']
         envconfig = cfg.get_env_config(env_name)
+
+        # --- Value1 / Value2 fields ---
 
         # Get default value1 and value2 fields from envconfig.yaml
         try:
@@ -792,9 +827,11 @@ class DataRepo:
         except KeyError:
             value2_field_default = None
 
-        # Use value1 and value 2 fields if passed, otherwise try to use defaults in envconfig.yaml
-        is_value1_field = 'value1_field' in query and query['value1_field'] != NOT_SPECIFIED
-        is_value2_field = 'value2_field' in query and query['value2_field'] != NOT_SPECIFIED
+        # Use value1 and value2 fields if passed, otherwise try to use defaults in envconfig.yaml
+        is_value1_field = 'value1_field' in query and query[
+            'value1_field'] is not None and query['value1_field'] != NOT_SPECIFIED
+        is_value2_field = 'value2_field' in query and query[
+            'value2_field'] is not None and query['value2_field'] != NOT_SPECIFIED
         value1_field = query['value1_field'] if is_value1_field else value1_field_default
         value2_field = query['value2_field'] if is_value2_field else value2_field_default
         if value1_field is None:
@@ -803,7 +840,17 @@ class DataRepo:
         elif value2_field is None:
             raise ValueError(
                 'value2_field not passed in query and no default in envconfig.yaml')
- 
+
+        # Split value2 arg, e.g. 'f.field1' --> ('f', 'field1')
+        if is_value2_field:
+            value2_property_level, value2_property_name = value2_field.split(
+                '.', 1)
+        else:
+            value2_property_level = NOT_SPECIFIED
+            value2_property_name = NOT_SPECIFIED
+
+        # --- Facet fields ---
+
         # Facet row/col (if provided)
         is_facet_row = 'facet_row' in query and query['facet_row'] != NOT_SPECIFIED
         is_facet_col = 'facet_col' in query and query['facet_col'] != NOT_SPECIFIED
@@ -840,7 +887,6 @@ class DataRepo:
 
         t.add("Query arguments retrieved.")
 
-
         # Return cached results if already exists
         # NOTE!: If updating, remember to update report at
         #       bottom of function (non-cached df return)
@@ -848,7 +894,8 @@ class DataRepo:
         if (query_hash in self._query_cache):
             df = self._query_cache[query_hash][DataRepo.QUERY_CACHE_FULL_DF]
             d_split_by_facet = self._query_cache[query_hash][DataRepo.QUERY_CACHE_SPLIT_FACET]
-            report_cached = self._report_cache.get(query_hash, if_not_exists=None)
+            report_cached = self._report_cache.get(
+                query_hash, if_not_exists=None)
             t1 = time.process_time()
 
             if report_cached is not None and allow_cached_report:
@@ -866,7 +913,9 @@ class DataRepo:
                     end_time=t1,
                     value1_field=value1_field,
                     value2_field=value2_field,
-                    status_message='',
+                    value2_cat_count=len(df['value2'].cat.categories),
+                    value2_cat_supported=value2_cat_supported,
+                    status_message=status_message_sep.join(status_messages),
                     is_facet_row=is_facet_row,
                     facet_row_property_level=facet_row_property_level,
                     facet_row_property_name=facet_row_property_name,
@@ -901,7 +950,8 @@ class DataRepo:
         fdr_env = sqlescapy.sqlescape(fdr_env)
 
         # ***********************************************************************
-        # ** STEP 1: Obtain all filter properties (file and record levels).
+        # ** STEP 1: FILTERING
+        #            Obtain all filter properties (file and record levels).
         #            Get the seq db files which are in scope and build
         #            record filters for the query.
         # ***********************************************************************
@@ -1060,25 +1110,34 @@ class DataRepo:
         # *** STEP 2: Load record data from the in-scope files
         # ****************************************************
 
-        # Get columns to read
+        # Get base columns to read
         columns = [
             'sys_point_id',
             'sys_coords_x',
             'sys_coords_y',
             value1_field,
-            value2_field
+            # value2_field
         ]
 
-        # If facet row/column is file-level
+        # If value2, facet row or facet column is file-level
         # we'll need sys_file_id to pull in file meta
-        if facet_row_property_level == FILE_FILTER_LEVEL or \
+        if value2_property_level == FILE_FILTER_LEVEL or \
+                facet_row_property_level == FILE_FILTER_LEVEL or \
                 facet_col_property_level == FILE_FILTER_LEVEL:
             columns.append('sys_file_id')
 
-        # Also read in requested facet
-        # row/column fields if record-level
+        # Read in requested value2 field and
+        # facet row/column fields if record-level
+        # and if not in the list of the base columns.
+        # The *_exclusive is set if the column isn't already
+        # in the list of base columns (to avoid loading twice).
+        value2_field_exclusive = False
         facet_row_exclusive = False
         facet_col_exclusive = False
+        if is_value2_field and value2_property_level == RECORD_FILTER_LEVEL:
+            if value2_property_name not in columns:
+                columns.append(value2_property_name)
+                value2_field_exclusive = True
         if is_facet_row and facet_row_property_level == RECORD_FILTER_LEVEL:
             if facet_row_property_name not in columns:
                 columns.append(facet_row_property_name)
@@ -1088,7 +1147,7 @@ class DataRepo:
                 columns.append(facet_col_property_name)
                 facet_col_exclusive = True
 
-        # Get list of Parquet files (seq records and file meta)
+        # Get list of in-scope Parquet files (seq records and file meta)
         # If only 1 record, remove from array (get single element as str)
         # otherwise Parquet will throw error in pd.read_parquet()
         # For meta files, should end with .meta.parquet.
@@ -1111,10 +1170,13 @@ class DataRepo:
         )
         t.add("Parquet file data loaded to DataFrame.")
 
-        # Add on the facet fields to the main
-        # records DataFrame (as category type).
-        # If -record- level, then simply add the new column.
-        # as 'facet_row' / 'facet_col'.
+        # --- Addition of extra fields ---
+
+        # Add on addition fields to the main
+        # records DataFrame (value2 field,
+        # facet row/column fields, as category type).
+        # If -record- level, then simply add the new column
+        # as 'value2' / 'facet_row' / 'facet_col'.
         # If -file- level, then read in the
         # Parquet meta files (for each Data Unit),
         # filtering on the selected property.
@@ -1123,48 +1185,66 @@ class DataRepo:
 
         # Set up the list of facet values to add
         # (will loop through these next...)
-        facet_items = []
+        extra_fields = []
 
-        facet_items.append(
-            (facet_row_property_level,
+        # Value2
+        extra_fields.append(
+            (
+                value2_property_level,
+                value2_property_name,
+                'value2',
+                value2_field_exclusive
+            )
+        )
+
+        # Facet row
+        extra_fields.append(
+            (
+                facet_row_property_level,
                 facet_row_property_name,
                 'facet_row',
-                facet_row_exclusive)
+                facet_row_exclusive
+            )
         )
 
-        facet_items.append(
-            (facet_col_property_level,
+        # Facet column
+        extra_fields.append(
+            (
+                facet_col_property_level,
                 facet_col_property_name,
                 'facet_col',
-                facet_col_exclusive)
+                facet_col_exclusive
+            )
         )
 
-        # Loop through and add facet values to df
-        for facet_item in facet_items:
+        # Loop through and add extra fields to df
+        # TODO: Optimise (avoid loading from file for each extra field)
+        for field_item in extra_fields:
 
-            facet_property_level = facet_item[0]
-            facet_property_name = facet_item[1]
-            facet_df_column = facet_item[2]
-            facet_field_exclusive = facet_item[3]
+            item_property_level = field_item[0]
+            item_property_name = field_item[1]
+            item_df_column = field_item[2]
+            item_field_exclusive = field_item[3]
 
-            # Add facet_row / facet_col as category column
+            # Add value2 / facet_row / facet_col as category column
             # (should be limited number)
-            if facet_property_level == RECORD_FILTER_LEVEL:
-                df[facet_df_column] = df[facet_property_name].astype(
-                    'category')
+            if item_property_level == RECORD_FILTER_LEVEL:
+                df[item_df_column] = df[item_property_name].astype(
+                    'category'
+                )
 
                 # If we only read in a
                 # field specifically for the
-                # facet row / column, we can
+                # value2 field / facet row / facet column, we can
                 # delete the original column now...
-                if facet_field_exclusive:
+                if item_field_exclusive:
                     df.drop(
-                        [facet_property_name],
+                        [item_property_name],
                         axis=1,
                         inplace=True
                     )
 
-            elif facet_property_level == FILE_FILTER_LEVEL:
+            elif item_property_level == FILE_FILTER_LEVEL:
                 # Read -meta- Parquet files
                 df_meta: pd.DataFrame = pd.read_parquet(
                     path=fns_meta,
@@ -1173,7 +1253,7 @@ class DataRepo:
                         'property_name',  # Filter below only
                         'property_value'
                     ],
-                    filters=[('property_name', '=', facet_property_name)]
+                    filters=[('property_name', '=', item_property_name)]
                 )
 
                 # Join by sys_file_id
@@ -1181,26 +1261,28 @@ class DataRepo:
                 # property values.
                 df_meta.drop_duplicates(inplace=True)
                 df_meta['property_value'] = df_meta['property_value'].astype(
-                    'category')
+                    'category'
+                )
                 df_meta.rename(
-                    columns={'property_value': facet_df_column},
+                    columns={'property_value': item_df_column},
                     inplace=True
                 )
 
-                # Join on sys_file_id, pull back facet_row/facet_column
-                meta_cols = ['sys_file_id', facet_df_column]
+                # Join on sys_file_id, pull back value2/facet_row/facet_column
+                meta_cols = ['sys_file_id', item_df_column]
                 df = df.merge(df_meta[meta_cols], how='left', copy=False)
 
-            elif facet_property_level == NOT_SPECIFIED:
+            elif item_property_level == NOT_SPECIFIED:
                 # Add empty field if not supplied
                 # (cleaner for groupby shortly...)
-                df[facet_df_column] = NOT_SPECIFIED
-                df[facet_df_column] = df[facet_df_column].astype('category')
-        t.add("Facet values added to DataFrame.")
+                df[item_df_column] = NOT_SPECIFIED
+                df[item_df_column] = df[item_df_column].astype('category')
+        t.add("Extra field values added to DataFrame.")
 
-        # If facet row/column is file-level;
+        # If extra field is file-level;
         # can remove sys_file_id we temporarily added
-        if facet_row_property_level == FILE_FILTER_LEVEL or \
+        if value2_property_level == FILE_FILTER_LEVEL or \
+                facet_row_property_level == FILE_FILTER_LEVEL or \
                 facet_col_property_level == FILE_FILTER_LEVEL:
             df.drop(
                 ['sys_file_id'],
@@ -1213,7 +1295,7 @@ class DataRepo:
             'sys_coords_x': 'x',
             'sys_coords_y': 'y',
             value1_field: 'value1',
-            value2_field: 'value2'
+            # value2_field: 'value2'
         }
         df.rename(columns=col_mapping, inplace=True)
         t.add("Tidying columns completed.")
@@ -1233,13 +1315,21 @@ class DataRepo:
 
         # reverse y, so higher y values are down.
         # must be performed - after- scaling.
-        #df['y_tf'] = df['y_tf'].max() - df['y_tf']
+        # df['y_tf'] = df['y_tf'].max() - df['y_tf']
         df['y_tf'] = 256.0 - df['y_tf']  # Should be maximum world y allowed
         t.add("Reversed scaled Y column")
 
         # Negate y - in tile world space, higher y is down,
         # but Leaflet map L.CRS coordinate system, higher y is up.
-        #df['y_tf'] = -df['y_tf']
+        # df['y_tf'] = -df['y_tf']
+
+        # TODO: Remove
+        # Temporary:
+        # RegEx should return one capture group only.
+        # See: https://pandas.pydata.org/pandas-docs/version/0.24.0rc1/api/generated/pandas.Series.str.extract.html
+        # df['value2'] = df['value2'].apply(lambda x: x[:5])  # First 5, e.g. IGHV3
+        # df['value2'] = df['value2'].str.extract('(^.{5})', expand=False)
+        # t.add("Applied value2 regex transform")
 
         # Reduce memory usage of columns
         # before caching
@@ -1254,16 +1344,23 @@ class DataRepo:
         df = df.astype(column_size_convert)
         t.add("Changed column data types (reduce memory usage).")
 
-        # TODO: Temporay, remove
+        # value2 field is of category type and category values have an index.
+        # Add class_index column and set this to the category index.
+        # Keep a separate field in case we want to add
+        # persistent colour indexes in the future between queries.
+        df['class_index'] = df['value2'].cat.codes
+        t.add("Added class_index (value2 label encoder).", {"computed": False})
+
+        # TODO: Temporary, remove
         # %% Label encode category value.
-        if value2_le is not None:
-            df['class_index'] = value2_le.transform(
-                df['value2'].apply(lambda x: x[:5]))  # First 5, e.g. IGHV3))
-            df['class_index'] = df['class_index'].astype('uint32')
-            t.add("Added class_index (value2 label encoder).", {"computed": True})
-        else:
-            df['class_index'] = df['value2']
-            t.add("Added class_index (value2 label encoder).", {"computed": False})
+        # if value2_le is not None:
+        #    df['class_index'] = value2_le.transform(
+        #        df['value2'].apply(lambda x: x[:5]))  # First 5, e.g. IGHV3))
+        #    df['class_index'] = df['class_index'].astype('uint32')
+        #    t.add("Added class_index (value2 label encoder).", {"computed": True})
+        # else:
+        #    df['class_index'] = df['value2']
+        #    t.add("Added class_index (value2 label encoder).", {"computed": False})
 
         # Create DataFrame split by facet
         # Always compute and store in the cache
@@ -1301,7 +1398,9 @@ class DataRepo:
             end_time=t1,
             value1_field=value1_field,
             value2_field=value2_field,
-            status_message='',
+            value2_cat_count=len(df['value2'].cat.categories),
+            value2_cat_supported=value2_cat_supported,
+            status_message=status_message_sep.join(status_messages),
             is_facet_row=is_facet_row,
             facet_row_property_level=facet_row_property_level,
             facet_row_property_name=facet_row_property_name,
@@ -1314,7 +1413,6 @@ class DataRepo:
             facet_col_sort_values=facet_col_sort_values
         )
         t.add("Query report generated.")
-
 
         # Store report in the cache
         self._report_cache.store(query_hash, report)

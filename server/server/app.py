@@ -50,8 +50,7 @@ from airrmap.shared.timing import Timing
 app = Quart(__name__, static_url_path='', static_folder=r'static')
 # CORS(app)  # Allow any origin, any route. (for cross-origin errors in browser).
 cors(app)
-class_rgb = None
-v_group_le = None
+class_rgb = np.array([])
 scaler_xy = None
 data_repo: DataRepo
 tile_helper: TileHelper
@@ -154,7 +153,6 @@ def _compute_seq_coords(env_name: str, seq_list_text: str, cfg: config.AppConfig
 def _build_tile_binned(tile_request: models.TileRequest,
                        df_facet: pd.DataFrame,
                        cfg: config.AppConfig,
-                       num_bins: int,
                        num_classes: int,
                        class_rgb,
                        t: Timing = None) -> Image.Image:
@@ -247,7 +245,6 @@ async def get_anchor_list(env_name):
     global scaler_xy
     return anchors.get_anchors_json(fn_anchors=cfg.get_anchordb(env_name),
                                     scaler_xy=scaler_xy,
-                                    v_group_le=v_group_le,
                                     class_rgb=class_rgb)
 
 
@@ -548,7 +545,7 @@ async def get_polyroi_summary():
     # TODO: Make configurable.
     # NOTE: Region should not contain chain letter ('cdr1' not 'cdrh1').
     # regions = env_config['anchor']['regions']
-    regions = ['cdr1', 'cdr2', 'cdr3'] #, 'cdr1-2']
+    regions = ['cdr1', 'cdr2', 'cdr3']  # , 'cdr1-2']
 
     async def async_generator():
 
@@ -623,10 +620,10 @@ async def get_polyroi_summary():
 
         # Add on cdr1-2 concatenated gapped sequence
         # TODO: Remove if no longer required
-        #df_records['seq_gapped_cdr1-2'] = df_records.apply(
+        # df_records['seq_gapped_cdr1-2'] = df_records.apply(
         #    lambda row: row['seq_gapped_cdr1'] + row['seq_gapped_cdr2'],
         #    axis='columns'
-        #)
+        # )
         #t.add('Added cdr1-2 concatenated field.')
 
         # Create the report
@@ -692,8 +689,6 @@ async def query_data():
         global class_rgb
         global data_repo
         global scaler_xy
-        global v_group_le
-        global num_classes
 
         # Init
         t = Timing()
@@ -703,12 +698,12 @@ async def query_data():
             cfg=cfg,
             query=query,
             scaler_xy=scaler_xy,
-            value2_le=v_group_le,
-            t=t)
+            t=t,
+            value2_cat_supported=len(class_rgb))
 
         # Return the report (but not the dataset, leave cached)
         report_json = json.dumps(report).encode('utf-8')
-        
+
         # Show timing information
         if cfg.tile_debug:
             print(json.dumps(t, default=vars, indent=2, sort_keys=True))
@@ -738,7 +733,6 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
     global request_ctr
     global class_rgb
     global scaler_xy
-    global v_group_le
     global num_classes
     query: models.RepoQuery  # = None
     request_ctr += 1
@@ -859,6 +853,13 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
     # Round to integer (required for tile binning)
     num_bins = int(round(num_bins))
 
+    # Heatmap/Binned layer color field.
+    # If not supplied, use class column from config.
+    if 'colorfield' in request.args:
+        color_field = request.args['colorfield'].strip()
+    else:
+        color_field = cfg.column_class
+
     # TODO: Tidy / move
     # Leaflet CRS.Simple workaround:
     # Translate tile Y coordinate
@@ -887,10 +888,11 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         cfg=cfg,
         query=query.to_dict(),
         scaler_xy=scaler_xy,
-        value2_le=v_group_le,
         split_by_facet=True,
         allow_cached_report=True,
-        t = None
+        t=None,
+        # Show error if num categories exceeds number of colours.
+        value2_cat_supported=len(class_rgb)
     )
     t.add('Dataset loaded.')
 
@@ -914,6 +916,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         value2_min=0.,  # not used
         value2_max=0.,  # not used
         num_bins=num_bins,
+        color_field=color_field,
         kdebrightness=kdebrightness,
         kdebw=kdebw,
         kde_colormap=kde_colormap,
@@ -1003,7 +1006,6 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
                 tile_request=tile_request,
                 df_facet=df_facet,
                 cfg=cfg,
-                num_bins=tile_request.num_bins,
                 num_classes=num_classes,
                 class_rgb=class_rgb,
                 t=t
@@ -1066,16 +1068,36 @@ scaler_xy = get_xy_scaler()
 data_repo = DataRepo(cfg)
 tile_helper = TileHelper()
 # TODO: make dynamic from categorical values
-v_groups = [f'IGHV{i+1}' for i in range(8)]
+# v_groups = [f'IGHV{i+1}' for i in range(8)]
 # v_groups.extend([f'IGLV{i+1}' for i in range(8)])
-v_group_le = LabelEncoder().fit(v_groups)
+# v_group_le = LabelEncoder().fit(v_groups)
 
 # Get colours for label encodings (list of RGB tuples)
-print("Getting colours...")
-num_classes = len(v_group_le.classes_)
-v_group_rgb = sns.mpl_palette("Set2", num_classes, as_cmap=False)
-class_rgb = np.array(v_group_rgb)
+# print("Getting colours...")
+# num_classes = len(v_group_le.classes_)
+# v_group_rgb = sns.mpl_palette("Set2", num_classes, as_cmap=False)
+# class_rgb = np.array(v_group_rgb)
 # ts, class_rgb, df = init_test_card()
+
+# class_rgb = np.array(sns.mpl_palette("Set2", 8, as_cmap=False))
+
+# Qualitative colours from colorbrewer2.org
+class_rgb = np.array([
+    (166, 206, 227),
+    (31, 120, 180),
+    (178, 223, 138),
+    (51, 160, 44),
+    (251, 154, 153),
+    (227, 26, 28),
+    (253, 191, 111),
+    (255, 127, 0),
+    (202, 178, 214)
+])
+
+# Need between 0.0 and 1.0
+class_rgb = class_rgb / 255.0
+num_classes = len(class_rgb)
+
 print("Initialised")
 
 # Start the server

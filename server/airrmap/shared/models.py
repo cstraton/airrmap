@@ -128,6 +128,7 @@ class TileRequest():
         value2_min: float,
         value2_max: float,
         num_bins: int,
+        color_field: str,
         kdebrightness: float,
         kdebw: float,
         kde_colormap: str,
@@ -194,8 +195,11 @@ class TileRequest():
             Maximum value, value2.
 
         num_bins : int
-            Number of bins to requested for the tile.
-            (horizontal and vertical).
+            Number of bins requested for the tile
+            (heatmap layer, horizontal and vertical bins).
+
+        color_field : str
+            The field that will determine the heatmap colors.
 
         kdebrightness : float
             KDE brightness multiplier.
@@ -246,6 +250,7 @@ class TileRequest():
         self.value2_min = float(value2_min)
         self.value2_max = float(value2_max)
         self.num_bins = int(num_bins)
+        self.color_field = color_field
         self.kdebrightness = float(kdebrightness)
         self.kdebw = float(kdebw)
         self.kde_colormap = kde_colormap
@@ -286,6 +291,7 @@ class TileRequest():
             value2_min=0.,
             value2_max=1.,
             num_bins=256,
+            color_field='',
             kdebrightness=1.,
             kdebw=.75,
             kde_colormap = 'RdBu',

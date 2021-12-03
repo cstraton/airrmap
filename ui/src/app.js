@@ -19,7 +19,10 @@ import CONFIG from '../config.json';
 function App(props) {
 
   // State and vars
-  // NOTE: If changing, consider updating Set loaded mapcontroller properties
+  // NOTE!: If changing, consider updating 'For loaded properties (using usePersistedState):' (below)
+  //        e.g. mapController.setBinnedEnabled(binnedEnabled).
+  //        Also: (1) add property to master_map_controller.js.
+  //              (2) add callback (e.g. setMyProperty, below)
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [filters, _setFilters] = useState({});  // User filters
 

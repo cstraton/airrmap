@@ -22,6 +22,9 @@ class FilterSelection2 extends Component {
     // Set up state
     this.state = {
       envSelected: null,
+      facetRow: null,
+      facetCol: null,
+      binnedColorField: null,
       _envList: null,
       _envFieldList: null,
       filters: []
@@ -86,6 +89,7 @@ class FilterSelection2 extends Component {
     submitData['env_name'] = this.state.envSelected
     submitData['facet_row'] = this.state.facetRow
     submitData['facet_col'] = this.state.facetCol
+    submitData['value2_field'] = this.state.binnedColorField
     submitData['filters'] = submitFilters
     console.log(submitData)
 
@@ -200,7 +204,7 @@ class FilterSelection2 extends Component {
 
   // Render
   render() {
-    const { envSelected, facetRow, facetCol, filters } = this.state
+    const { envSelected, facetRow, facetCol, binnedColorField, filters } = this.state
     return (
       <Form onSubmit={this.handleSubmit} size={'small'}>
         {/* Environment and submit */}
@@ -250,6 +254,24 @@ class FilterSelection2 extends Component {
             selection
             onChange={this.handleChange}
           />
+        </Form.Group>
+
+        {/* Heatmap Colour Field */}
+        <Header as='h5'><Icon className={'bi bi-filter'} />Heatmap Colour</Header>
+        <Form.Group widths='equal'>
+          <Form.Field
+            name='binnedColorField'
+            value={binnedColorField}
+            control={Dropdown}
+            options={this.state._envFieldList}
+            placeholder='Heatmap colour field...'
+            search
+            selection
+            onChange={this.handleChange}
+          />
+          <Form.Field>
+            {/* Stop width expansion of previous dropdown */}
+          </Form.Field>
         </Form.Group>
 
         {/* Filters */}
