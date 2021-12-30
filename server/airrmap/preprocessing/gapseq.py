@@ -47,21 +47,22 @@ def get_gapped_seq(seq: str, fixed_length: int, gap_char: str = '.', left_bias=T
     # Length 09 	27	28	29	30	31	-	-	-	35	36	37	38
     # etc.
 
-    # Split into two halves.
-    # Handle non-even seq lengths.
-    split_point = len(seq) // 2
-    if len(seq) % 2 != 0:
-        split_point += 1 if left_bias else 0  # +0 for right bias if non-even seq length
-    left_half = seq[:split_point]
-    right_half = seq[split_point:]
+    # Init
+    seq_len = len(seq)
 
     # Compute the gap length
-    gap_len = fixed_length - len(seq)
+    gap_len = fixed_length - seq_len
     if (gap_len < 0):
         raise ValueError(
-            f'fixed_len value ({fixed_length}) is too small for sequence length ({len(seq)}: {seq})'
+            f'fixed_len value ({fixed_length}) is too small for sequence length ({seq_len}: {seq})'
         )
 
-    # Return the value
-    gapped_seq = left_half + (gap_char * gap_len) + right_half
-    return gapped_seq
+    # Split into two halves.
+    # Handle non-even seq lengths.
+    split_point = seq_len // 2
+    if seq_len % 2 != 0:
+        split_point += 1 if left_bias else 0  # +0 for right bias if non-even seq length
+
+    # Return the gapped sequence
+    # (left half + gap + right half)
+    return seq[:split_point] + (gap_char * gap_len) + seq[split_point:]
