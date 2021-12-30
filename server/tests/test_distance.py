@@ -4,6 +4,8 @@ import unittest
 from airrmap.preprocessing.distance import *
 
 # %% Unit tests
+
+
 class TestDistances(unittest.TestCase):
 
     def setUp(self):
@@ -103,6 +105,32 @@ class TestDistances(unittest.TestCase):
             measure_distance_lev1("ABC", "A-B-C"),
             2,
             'Inserts, should be distance 2.'
+        )
+
+    def test_measure_distance_lev2(self):
+        # Levenshtein distance with
+        # support for concatenation of multiple columns.
+        # Create two records, each with two columns.
+        rec1 = dict(
+            col1="ABC",
+            col2="DEF"
+        )
+        rec2 = dict(
+            col1="ABD",  # dist=1
+            col2="DGH"  # dist=2
+        )
+        kwargs = dict(
+            columns=['col1', 'col2']
+        )
+
+        self.assertEqual(
+            measure_distance_lev2(
+                rec1,
+                rec2,
+                **kwargs
+            ),
+            3,
+            'Distance should be 3.'
         )
 
     def test_create_distance_matrix(self):

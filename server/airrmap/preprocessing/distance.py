@@ -173,6 +173,35 @@ def measure_distance_lev1(item1: str, item2: str, **kwargs):
     return editdistance.eval(item1, item2)
 
 
+def measure_distance_lev2(item1: Any, item2: Any, columns: List[str]) -> int:
+    """
+    Levenshtein with support for concatenation of multiple fields.
+
+    Parameters
+    ----------
+    item1 : Any
+        Dict-like record.
+
+    item2 : Any
+        Dict-like record.
+
+    columns : List[str]
+        List of string columns to concatenate
+        in item1 and item2.
+
+    Returns
+    -------
+    int
+        The Levenshtein distance for the
+        concatentated column values.
+    """
+
+    return editdistance.eval(
+        ''.join([item1[x] for x in columns]),
+        ''.join([item2[y] for y in columns])
+    )
+
+
 # %%
 def create_distance_matrix(records: pd.DataFrame, distance_function: Callable,
                            measure_value: str = 'aa', **kwargs):
