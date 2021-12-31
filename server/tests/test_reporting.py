@@ -1,4 +1,5 @@
 import unittest
+import itertools
 from airrmap.application.reporting import *
 
 
@@ -173,25 +174,22 @@ class TestReporting(unittest.TestCase):
     def test_build_seq_logo(self):
 
         # Generate test records
-        region = "cdr1"
-        redundancy_field = "redundancy"
         rec1 = {
-            "region": region,
-            f"seq_gapped_{region}": 'AAA...AA',
-            redundancy_field: 2
+            f"seq_gapped_cdr1": 'AAA...AA',
+            "redundancy": 2
         }
         rec2 = {
-            "region": region,
-            f"seq_gapped_{region}": 'AA.....A',
-            redundancy_field: 4
+            f"seq_gapped_cdr1": 'AA.....A',
+            "redundancy": 4
         }
         df_records = pd.DataFrame.from_records([rec1, rec2])
 
         # Get the logo and metadata
         result: Dict = build_seq_logo(
-            region=region,
+            title='CDR1',
+            gapped_field = 'seq_gapped_cdr1',
             df_records=df_records,
-            redundancy_field=redundancy_field
+            redundancy_field='redundancy'
         )
 
         # Expected keys

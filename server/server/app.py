@@ -536,16 +536,10 @@ async def get_polyroi_summary():
     env_config = cfg.get_env_config(env_name)
     cdr3_field = env_config['application']['cdr3_field']
     redundancy_field = env_config['application']['redundancy_field']
-    numbered_seq_field = env_config['application']['numbered_seq_field']
+    seq_logo_cfgs = env_config['application']['seq_logos']
     v_field = env_config['application']['v_field']
     d_field = env_config['application']['d_field']
     j_field = env_config['application']['j_field']
-
-    # Define regions to use for the sequence logos
-    # TODO: Make configurable.
-    # NOTE: Region should not contain chain letter ('cdr1' not 'cdrh1').
-    # regions = env_config['anchor']['regions']
-    regions = ['cdr1', 'cdr2', 'cdr3']  # , 'cdr1-2']
 
     async def async_generator():
 
@@ -588,18 +582,21 @@ async def get_polyroi_summary():
         t.add('Region coordinates finished.')
 
         # Build field list to load
-        # Filter out 'None'
         field_list = [
             cdr3_field,
             redundancy_field,
-            # numbered_seq_field, # Temporarily removed, slow to load (large amount of data)
             v_field,
             d_field,
             j_field,
-            'seq_gapped_cdr1',  # TODO: Make configurable
-            'seq_gapped_cdr2',
-            'seq_gapped_cdr3'
         ]
+
+        # Add on seq logo gapped fields
+        seq_logo_gapped_fields = [
+            x['gapped_field'] for x in seq_logo_cfgs
+        ]
+        field_list.extend(seq_logo_gapped_fields)
+
+        # Filter out any 'None' settings
         field_list = [x for x in field_list if x is not None]
 
         # Load the report data
@@ -629,9 +626,9 @@ async def get_polyroi_summary():
         # Create the report
         report = reporting.get_summary_report(
             df_records=df_records,
-            regions=regions,
             facet_row_value=facet_row_value,
             facet_col_value=facet_col_value,
+            seq_logo_cfgs = seq_logo_cfgs,
             cdr3_field=cdr3_field,
             redundancy_field=redundancy_field,
             v_field=v_field,

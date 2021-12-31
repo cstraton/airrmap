@@ -44,7 +44,6 @@ application:
   value2_field: v
   cdr3_field: cdr3
   redundancy_field: redundancy # Redundancy of sequence, used for reports.
-  numbered_seq_field: data # Field containing the IMGT numbered sequence, used for reports.
   v_field: null
   d_field: null
   j_field: null

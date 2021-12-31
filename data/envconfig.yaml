@@ -1,7 +1,10 @@
 # Config file for environment
 # File paths should be relative to base folder.
 
-# Version history
+# Version history (Remember to update 'version' property below)
+# 1.17 - Remove application.numbered_seq_field and application.numbered_seq_field_is_json
+# 1.16 - Rename application.seq_logo_fields to application.seq_logos
+# 1.15 - Add application.seq_logo_fields
 # 1.14 - Defaults for OAS .csv.gz MiAIRR format (CDRH1-H2)
 # 1.13 - Plot sort values, replace 'file.Longitudinal' -> 'f.Longitudinal'
 # 1.12 - Add application.numbered_seq_field_is_json.
@@ -19,7 +22,7 @@
 # 1.01 - Add anchor.n_neighbors for UMAP (optional)
 # 1.00 - Initial
 
-version: 1.14
+version: 1.17
 
 # Header
 title: Environment name.
@@ -71,11 +74,22 @@ application:
   value2_field: v_call # Default, may be overridden by query.
   cdr3_field: cdr3_aa # CDR3 amino acid sequence, used for length distribution plots.
   redundancy_field: Redundancy # Redundancy of sequence, used for reports.
-  numbered_seq_field: ANARCI_numbering # Field containing the IMGT numbered sequence, used for reports.
-  numbered_seq_field_is_json: 2 # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
   v_field: v_call  # Field containing the assigned V germline gene, or null. Used for reporting.
   d_field: d_call  # Field containing the assigned D germline gene, or null. Used for reporting.
   j_field: j_call  # Field containing the assigned J germline gene, or null. Used for reporting.
+  seq_logos: # Gapped sequences for sequence logos
+      - source_field: "cdr1_aa"
+        gapped_field: "seq_gapped_cdr1"
+        fixed_length: 12 # High enough to accomodate longest sequence, otherwise error. Minimise to save space. (IMGT).
+        title: "CDR1"
+      - source_field: "cdr2_aa"
+        gapped_field: "seq_gapped_cdr2"
+        fixed_length: 10 # IMGT
+        title: "CDR2"
+      - source_field: "cdr3_aa"
+        gapped_field: "seq_gapped_cdr3"
+        fixed_length: 32 # AHo CDRL3 (Honegger and Plückthun, 2001)
+        title: "CDR3"
 
 # Plot settings (comment out if not used)
 #plot:
