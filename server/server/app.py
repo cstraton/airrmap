@@ -537,7 +537,6 @@ async def get_polyroi_summary():
     cdr3_field = env_config['application']['cdr3_field']
     redundancy_field = env_config['application']['redundancy_field']
     seq_logo_cfgs = env_config['application']['seq_logos']
-    numbered_seq_field = env_config['application']['numbered_seq_field']
     v_field = env_config['application']['v_field']
     d_field = env_config['application']['d_field']
     j_field = env_config['application']['j_field']
@@ -586,7 +585,6 @@ async def get_polyroi_summary():
         field_list = [
             cdr3_field,
             redundancy_field,
-            # numbered_seq_field, # Temporarily removed, slow to load (large amount of data)
             v_field,
             d_field,
             j_field,

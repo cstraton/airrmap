@@ -2,7 +2,8 @@
 # File paths should be relative to base folder.
 
 # Version history (Remember to update 'version' property below)
-# 1.16 - rename application.seq_logo_fields to application.seq_logos
+# 1.17 - Remove application.numbered_seq_field and application.numbered_seq_field_is_json
+# 1.16 - Rename application.seq_logo_fields to application.seq_logos
 # 1.15 - Add application.seq_logo_fields
 # 1.14 - Defaults for OAS .csv.gz MiAIRR format (CDRH1-H2)
 # 1.13 - Plot sort values, replace 'file.Longitudinal' -> 'f.Longitudinal'
@@ -21,7 +22,7 @@
 # 1.01 - Add anchor.n_neighbors for UMAP (optional)
 # 1.00 - Initial
 
-version: 1.16
+version: 1.17
 
 # Header
 title: Environment name.
@@ -73,8 +74,6 @@ application:
   value2_field: v_call # Default, may be overridden by query.
   cdr3_field: cdr3_aa # CDR3 amino acid sequence, used for length distribution plots.
   redundancy_field: Redundancy # Redundancy of sequence, used for reports.
-  numbered_seq_field: ANARCI_numbering # Field containing the IMGT numbered sequence, used for reports.
-  numbered_seq_field_is_json: 2 # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
   v_field: v_call  # Field containing the assigned V germline gene, or null. Used for reporting.
   d_field: d_call  # Field containing the assigned D germline gene, or null. Used for reporting.
   j_field: j_call  # Field containing the assigned J germline gene, or null. Used for reporting.
