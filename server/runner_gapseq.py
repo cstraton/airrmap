@@ -78,7 +78,7 @@ def main(argv):
     cfgapp = envcfg['application']
 
     # Fields to create gapped sequences for
-    gapped_seq_fields = cfgapp['seq_logo_fields']
+    gapped_seq_fields = cfgapp['seq_logos']
 
     # Output folder
     output_subfolder_name = 'modified'
