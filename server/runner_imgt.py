@@ -11,6 +11,7 @@ import sys
 import pandas as pd
 import json
 import airrmap.preprocessing.imgt as imgt
+import airrmap.preprocessing.anchors as anchors
 import airrmap.preprocessing.distance as distance
 import argparse
 from tqdm import tqdm
@@ -127,7 +128,7 @@ def process_imgt(env_folder: str,
 
     # Compute coordinates and distances
     log.info('Start computing coordinates.')
-    df_coords, df_melted = imgt.compute_coords(
+    df_coords, df_melted = anchors.compute_coords(
         df_dist_matrix, 
         method=dimension_reduction_method, 
         random_state=random_state,
@@ -137,11 +138,11 @@ def process_imgt(env_folder: str,
     # Generate plots
     log.info('Start generating plots.')
     log.info('Generating anchor distortion...')
-    fig_anchor_distortion_group, fig_anchor_distortion_all = imgt.plot_anchor_distortion(
+    fig_anchor_distortion_group, fig_anchor_distortion_all = anchors.plot_anchor_distortion(
         df_melted)
 
     log.info('Generating anchor positions...')
-    fig_anchor_positions = imgt.plot_anchor_positions(df_coords)
+    fig_anchor_positions = anchors.plot_anchor_positions(df_coords)
     log.info('Finished generating plots.')
 
     # Save the plots
@@ -176,11 +177,11 @@ def process_imgt(env_folder: str,
     fn_db = os.path.join(env_folder, output_folder, output_db_file)
 
     log.info(f'Creating anchor_records table...')
-    imgt.db_write_records(df_imgt, fn_db)
+    anchors.db_write_records(df_imgt, fn_db)
     log.info(f'Finished creating anchor_records table.')
 
     log.info(f'Creating anchor_coords table...')
-    imgt.db_write_coords(df_coords, fn_db)
+    anchors.db_write_coords(df_coords, fn_db)
     log.info(f'Finished creating anchor_coords table.')
 
     log.info('Finished writing anchors database.')

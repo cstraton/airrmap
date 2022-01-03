@@ -27,6 +27,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import airrmap.shared.analysis_helper as ah
 import airrmap.preprocessing.imgt as imgt
+import airrmap.preprocessing.anchors as anchors
 import airrmap.preprocessing.distance as distance
 from airrmap.application.config import AppConfig, SeqFileType
 from airrmap.preprocessing.oas_adapter_base import OASAdapterBase, AnchorItem
@@ -166,7 +167,7 @@ def get_coords_using_reduction(
     )
 
     # Compute the coords and distances
-    df_coords, df_dist = imgt.compute_coords(
+    df_coords, df_dist = anchors.compute_coords(
         df_dist_matrix=df_dist_matrix,
         method=reduction_method,
         random_state=random_state)
@@ -472,7 +473,7 @@ df_dist_matrix = distance.create_distance_matrix(
 
 
 # %% Compute pure MDS results without anchors
-df_mds_coords, df_mds_dist = imgt.compute_coords(
+df_mds_coords, df_mds_dist = anchors.compute_coords(
     df_dist_matrix=df_dist_matrix,
     method=reduction_method,
     random_state=random_state)

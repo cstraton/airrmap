@@ -30,7 +30,7 @@ class TestImgtParser(unittest.TestCase):
             self.description), dict, "should be dict")
         # check it fails if unexpected number of values
         with self.assertRaises(Exception):
-            _parse_description(self.description_bad)
+            imgt._parse_description(self.description_bad)
 
     def test_get_imgt_residue_names(self):
         # Insertions between 111 and 112, 111A-Q->112Q-A.
