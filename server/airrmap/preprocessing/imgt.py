@@ -340,45 +340,6 @@ def _parse_v_germline_to_imgt(seq: str, chain: str, remove_gaps=True) -> dict:
 
  # ---- PARSING END -----
 
-
-def build_distance_matrix(df: pd.DataFrame, distance_function, measure_value='aa_annotated',
-                          triangle_inequality_samples=10000, **kwargs) -> pd.DataFrame:
-    """Build distance matrix from IMGT references
-
-    Args:
-        df (pd.DataFrame): IMGT reference sequences, translated and annotated.
-
-        distance_function (function): Distance function that takes two items and 
-            returns a single distance metric.
-
-        measure_value (str, optional): Column name containing annotated amino 
-            acid sequences. Defaults to 'aa_annotated'.
-
-        triangle_inequality_samples (int, optional): A random sample of distances 
-            will be tested to ensure the triangle inequality holds. Defaults to 10000.
-
-    Raises:
-        Exception: If triangle inequality does not hold.
-
-    Returns:
-        pd.DataFrame: Square distance matrix, headers will be same as df.index.
-    """
-
-    # Create the distance matrix
-    df_distances = distance.create_distance_matrix(df,
-                                                   distance_function, measure_value, **kwargs)
-
-    # Check for breach of triangle inequality
-    triangle_test = distance.verify_triangle_inequality(df_distances,
-                                                        triangle_inequality_samples)
-    if len(triangle_test) > 0:
-        print(triangle_test)
-        raise Exception('Triangle inequality does not hold')
-
-    # Return
-    return df_distances
-
-
 def _coord_distances(df_coords: pd.DataFrame, df_orig_dist: pd.DataFrame) -> pd.DataFrame:
     """Create square matrix of plotted distances
 

@@ -11,6 +11,7 @@ import sys
 import pandas as pd
 import json
 import airrmap.preprocessing.imgt as imgt
+import airrmap.preprocessing.distance as distance
 import argparse
 from tqdm import tqdm
 from typing import Any
@@ -104,13 +105,25 @@ def process_imgt(env_folder: str,
     # Compute pairwise distance matrix
     log.info('Start computing pairwise distance matrix.')
     dist_function = getattr(distance, distance_measure)  # get by str name
-    df_dist_matrix = imgt.build_distance_matrix(
-        df_imgt, 
+    df_dist_matrix = distance.create_distance_matrix(
+        records=df_imgt,
         distance_function=dist_function,
-        measure_value=seq_field, 
+        measure_value=seq_field,
         **distance_measure_kwargs
     )
     log.info('Finished computing pairwise distance matrices.')
+
+    # Triangle inequality test (check distance function is valid)
+    log.info('Start triangle inequality test.')
+    triangle_test = distance.verify_triangle_inequality(
+        df_dist_matrix,
+         n=10000)
+    if len(triangle_test) > 0:
+        err_msg = 'Triangle inequality does not hold! Check distance measure.'
+        log.critical(err_msg)
+        print(triangle_test)
+        raise Exception(err_msg)
+    log.info('Finished triangle inequality test.')
 
     # Compute coordinates and distances
     log.info('Start computing coordinates.')

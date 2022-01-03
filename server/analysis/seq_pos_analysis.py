@@ -157,12 +157,11 @@ def get_coords_using_reduction(
     """
 
     # Build distance matrix
-    df_dist_matrix = imgt.build_distance_matrix(
-        df=df_seqs,
+    # (Leave triangle inequality test as already tested)
+    df_dist_matrix = distance.create_distance_matrix(
+        records=df_seqs,
         distance_function=distance_measure_func,
-        measure_value=seq_field,
-        # Set to 10 for performance, tested already using this method.
-        triangle_inequality_samples=10,
+        measure_value =seq_field,
         **distance_measure_kwargs
     )
 
@@ -464,12 +463,13 @@ plot_data = np.array(plot_data).swapaxes(0, 1)  # type: ignore
 
 # %% Try pure MDS (without anchors/multilateration, for comparison)
 #df_mds_sample = df_seqs_sample.sample(n=int(len(df_seqs_sample) ** 0.5))
-df_dist_matrix = imgt.build_distance_matrix(
-    df=df_seqs_sample,
+# Leave triangle inequality test as tested already
+df_dist_matrix = distance.create_distance_matrix(
+    records=df_seqs_sample,
     distance_function=distance_measure_func,
-    measure_value=seq_field,
-    triangle_inequality_samples=10  # already tested
+    measure_value=seq_field
 )
+
 
 # %% Compute pure MDS results without anchors
 df_mds_coords, df_mds_dist = imgt.compute_coords(
