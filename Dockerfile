@@ -33,7 +33,7 @@ COPY server/server/static /tmp/build_ui
 
 ## Install Python (not alpine due to Kaleido issue)
 ## https://github.com/plotly/Kaleido/issues/34
-## -slim also fails with pip install editdistance (gcc issues)
+## -slim also fails with pip install editdistance / polyleven? (gcc issues)
 ## FROM python:3.8-alpine
 FROM python:3.8
 

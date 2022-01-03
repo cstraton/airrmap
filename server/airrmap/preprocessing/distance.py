@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import itertools
 import random
-import editdistance
+from polyleven import levenshtein
 
 from tqdm import tqdm
 from sklearn import manifold
@@ -168,9 +168,9 @@ def measure_distance3(item1: dict, item2: dict, regions: list):
 
 def measure_distance_lev1(item1: str, item2: str, **kwargs):
     """
-    Measure distance levenshtein (editdistance library)
+    Measure distance levenshtein (Polyleven library)
     """
-    return editdistance.eval(item1, item2)
+    return levenshtein(item1, item2)
 
 
 def measure_distance_lev2(item1: Any, item2: Any, columns: List[str]) -> int:
@@ -196,7 +196,7 @@ def measure_distance_lev2(item1: Any, item2: Any, columns: List[str]) -> int:
         concatentated column values.
     """
 
-    return editdistance.eval(
+    return levenshtein(
         ''.join([item1[x] for x in columns]),
         ''.join([item2[y] for y in columns])
     )
