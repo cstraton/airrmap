@@ -2,6 +2,7 @@
 # File paths should be relative to base folder.
 
 # Version history (Remember to update 'version' property below)
+# 1.20 - Remove anchor.seq_field_is_json and sequence.seq_field_is_json
 # 1.19 - Replace anchor.regions with distance_measure_options
 # 1.18 - Move distance_measure to header
 # 1.17 - Remove application.numbered_seq_field and application.numbered_seq_field_is_json
@@ -24,7 +25,7 @@
 # 1.01 - Add anchor.n_neighbors for UMAP (optional)
 # 1.00 - Initial
 
-version: 1.19
+version: 1.20
 
 # Header
 title: Environment name.
@@ -48,7 +49,6 @@ anchor:
   build_image_folder: build/anchor/img
   build_db_file: anchor.db
   seq_field: 'aa_annotated' # Field containing the sequence value to use.
-  seq_field_is_json: True # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
   method: MDS  # MDS, TSNE, PCA, UMAP
   random_state: 2
   n_neighbors: 100 # UMAP only, optional (default 100).
@@ -61,7 +61,6 @@ sequence:
   build_image_folder: build/seq/img
   build_db_files: \*.db # Remove.
   seq_field: 'ANARCI_numbering' # Care! Use '*_aa' fields if OAS csv (e.g. 'cdr3_aa' NOT 'cdr3' which contains DNA). Field in data unit containing the sequence value to use.
-  seq_field_is_json: 2 # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
   seq_id_field: null # Field to use as seq ID - must be integers. Use null to auto-generate.
   seq_row_start: 3 # Row that sequence records start.
   num_closest_anchors: 0 # 0 all.

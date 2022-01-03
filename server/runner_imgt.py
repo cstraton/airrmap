@@ -40,7 +40,6 @@ def main(argv):
     output_image_folder = cfg['build_image_folder']
     output_db_file = cfg['build_db_file']
     seq_field = cfg['seq_field']
-    seq_field_is_json = cfg['seq_field_is_json']
     random_state = cfg['random_state']
     n_neighbors = cfg['n_neighbors'] if 'n_neighbors' in cfg else 15
  
@@ -62,7 +61,6 @@ def main(argv):
                      output_image_folder=output_image_folder,
                      output_db_file=output_db_file,
                      seq_field=seq_field,
-                     seq_field_is_json=seq_field_is_json,
                      dimension_reduction_method=method,
                      distance_measure=distance_measure,
                      distance_measure_kwargs=distance_measure_options,
@@ -77,7 +75,6 @@ def process_imgt(env_folder: str,
                  output_image_folder: str,
                  output_db_file: str,
                  seq_field: str,
-                 seq_field_is_json: Any,
                  dimension_reduction_method: str,
                  distance_measure: str,
                  distance_measure_kwargs: dict,
@@ -147,10 +144,6 @@ def process_imgt(env_folder: str,
     # Save the data files
     # TODO: Change output name
     log.info('Saving data files...')
-    # Convert dict to valid json if it was converted from json
-    if seq_field_is_json != False:
-        df_imgt[seq_field] = df_imgt[seq_field].apply(json.dumps)
-
     df_imgt.to_csv(os.path.join(env_folder, output_folder, 'IGHV_processed.csv'))
     df_melted.to_csv(os.path.join(env_folder, output_folder, 'IGHV_dist_melted.csv'))
     df_coords.to_csv(os.path.join(env_folder, output_folder, 'IGHV_coords.csv'))

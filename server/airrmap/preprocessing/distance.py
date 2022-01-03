@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import itertools
 import random
+import collections
+import json
 from polyleven import levenshtein
 
 from tqdm import tqdm
@@ -119,7 +121,7 @@ def measure_distance2(string1: str, string2: str):
     return dist
 
 
-def measure_distance3(item1: dict, item2: dict, regions: list):
+def measure_distance3(item1: Any, item2: Any, regions: list):
     """
     Measure distance 3.
 
@@ -128,7 +130,7 @@ def measure_distance3(item1: dict, item2: dict, regions: list):
     CARE!: +1 distance will be added to any gaps - consider this if using different
     lengths / partials, or if the annotated sequence contains '.' items.
 
-    :param item1: The sequence. Should be a dictionary, e.g.:
+    :param item1: The sequence. Should be a dictionary or JSON, e.g.:
     record {} -> region ('cdrh2') -> residue number (imgt '26').
 
     :param item2: Second annotated sequence.
@@ -140,6 +142,13 @@ def measure_distance3(item1: dict, item2: dict, regions: list):
     # Ensure at least one region
     if len(regions) < 1:
         raise Exception('No regions provided')
+
+    # Convert to JSON if required
+    if not isinstance(item1, collections.Mapping):
+        item1 = json.loads(item1)
+    if not isinstance(item2, collections.Mapping):
+        item2 = json.loads(item2)
+
 
     total_distance = 0
     for region_key in regions:

@@ -536,8 +536,7 @@ class OASAdapterBase:
 
     @staticmethod
     def prepare(fn, seq_row_start: int, fn_anchors,
-                anchor_seq_field='aa_annotated',
-                anchor_convert_json: Any = False):
+                anchor_seq_field='aa_annotated'):
         """
         Prepare for processing a file.
 
@@ -561,11 +560,6 @@ class OASAdapterBase:
         anchor_seq_field: str
             Field in the anchor file containing the sequence to be
             measured.
-
-        anchor_convert_json : bool or int, optional
-            False or 0 if seq_field does not contain json values.
-            1 if seq_field contains single-quoted json values.
-            True or 2 if seq_field contains double-quoted json values.
 
         Returns
         -------
@@ -596,23 +590,11 @@ class OASAdapterBase:
         else:
             record_count = 0
 
-        # Get transform for anchor sequence
-        anchor_seq_transform: Any
-        if anchor_convert_json == False:
-            anchor_seq_transform = None
-        elif anchor_convert_json == True:
-            anchor_seq_transform = json.loads
-        elif anchor_convert_json == JSON_SINGLE_QUOTE:
-            anchor_seq_transform = ast.literal_eval
-        else:
-            raise ValueError(
-                f'Unexpected value for anchor_convert_json: {anchor_convert_json}')
-
         # Load anchors
         anchors: Dict[int, AnchorItem] = OASAdapterBase.load_anchors(
             fn_anchors=fn_anchors,
             seq_column=anchor_seq_field,
-            seq_transform=anchor_seq_transform
+            seq_transform=None
         )
 
         # Get sha1 of the anchors daabase
@@ -627,45 +609,23 @@ class OASAdapterBase:
         )
 
     @staticmethod
-    def load_seq_value(x, convert_json):
+    def load_seq_value(x):
         """
-        Transform a sequence value according to the convert_json setting.
+        Load a sequence value direct from the dataset and
+        handle any required transformations (based on type, for example).
 
         Parameters
         ----------
         x : Any
-            A string or JSON numbered sequence.
-
-        convert_json : bool or int.
-            False or 0 if x does not contain json values.
-            True or 1 if x contains double-quoted json values.
-            2 if x contains single-quoted json values.
+            Sequence value(s) from dataset.
 
         Returns
         -------
-        Dict or str:
-            A dictionary if value was JSON, otherwise the original string.
-
-        Raises
-        ------
-        ValueError
-            If unexpected value for convert_json.
+        Any
+            Transformed seq (if applicable).
         """
 
-        JSON_SINGLE_QUOTE = 2
-
-        seq: Any
-        if convert_json == False:
-            seq = x
-        elif convert_json == True:
-            seq = json.loads(x)
-        elif convert_json == JSON_SINGLE_QUOTE:
-            seq = ast.literal_eval(x)
-        else:
-            raise ValueError(
-                f'Unexpected value for convert_json: {convert_json}')
-
-        return seq
+        return x
 
     @staticmethod
     def process_single_record(row,
@@ -674,7 +634,6 @@ class OASAdapterBase:
                               num_closest_anchors: int,
                               distance_measure_name: str,
                               distance_measure_kwargs: dict,
-                              convert_json: Any = False,
                               save_anchor_dists: bool = True,
                               anchor_dist_compression: str = 'zlib',
                               anchor_dist_compression_level: int = 9,
@@ -706,11 +665,6 @@ class OASAdapterBase:
         distance_measure_kwargs : dict
             Additional keyword arguments required by the 
             selected distance measure.
-
-        convert_json : bool or int, optional
-            False or 0 if seq_field does not contain json values.
-            True or 1 if seq_field contains double-quoted json values.
-            2 if seq_field contains single-quoted json values.
 
         save_anchor_dists : bool, optional
             True to include the binary-encoded anchor distances in the
@@ -751,8 +705,7 @@ class OASAdapterBase:
         # Convert from JSON if required.
         seq: Any
         seq = OASAdapterBase.load_seq_value(
-            x=row[seq_field],
-            convert_json=convert_json
+            x=row[seq_field]
         )
 
         # Get distance between sequence and all anchor sequences

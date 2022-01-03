@@ -45,6 +45,9 @@ class TestDistances(unittest.TestCase):
         item3 = dict(
             cdr1=dict(i1='U', i2='V'),
             cdr2=dict(i1='Y', i2='Z'))
+        
+        item1_json = json.dumps(item1)
+        item3_json = json.dumps(item3)
 
         # Same
         self.assertEqual(
@@ -53,6 +56,10 @@ class TestDistances(unittest.TestCase):
         # Same number, different values
         self.assertEqual(
             measure_distance3(item1, item3, ['cdr1', 'cdr2']), 4, 'Different values')
+
+        # Same number, different values, JSON string (check conversion to dict)
+        self.assertEqual(
+            measure_distance3(item1_json, item3_json, ['cdr1', 'cdr2']), 4, 'Different values (json)')
 
         # +1 Extra
         self.assertEqual(
@@ -75,6 +82,7 @@ class TestDistances(unittest.TestCase):
                           item1,
                           item1,
                           [])
+
 
     def test_measure_distance_lev1(self):
         self.assertEqual(

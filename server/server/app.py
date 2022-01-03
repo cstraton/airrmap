@@ -113,18 +113,10 @@ def _compute_seq_coords(env_name: str, seq_list_text: str, cfg: config.AppConfig
     # Split to lines
     seq_list = seq_list_text.splitlines(keepends=False)
 
-    # Check if JSON format (checks first line)
-    try:
-        json.loads(seq_list[0])
-        convert_json = True
-    except Exception as ex:
-        convert_json = False
-
     # Compute the coordinates
     result_list = compute_coords.get_coords(
         env_name=env_name,
         seq_list=seq_list,
-        convert_json=convert_json,
         app_cfg=cfg
     )
 

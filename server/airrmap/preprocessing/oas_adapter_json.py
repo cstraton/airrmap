@@ -85,7 +85,6 @@ class OASAdapterJSON(OASAdapterBase):
                         save_anchor_dists=False,
                         anchor_dist_compression='zlib',
                         anchor_dist_compression_level=9,
-                        convert_json: Any = False,
                         stop_after_n_chunks: int = 0,
                         nb_workers: int = None):
         """
@@ -160,11 +159,6 @@ class OASAdapterJSON(OASAdapterBase):
         anchor_dist_compression_level : int, optional
             Compression level to use if save_anchor_dists is True, by default 9 (highest).
 
-        convert_json : Any, optional
-            Select False or 0 if seq_field does not contain a JSON-encoded sequence,
-            True or 1 if seq_field contains standard double-quoted JSON, or
-            1 if single-quoted JSON. By default False.
-
         stop_after_n_chunks : int, optional
             Specify a value larger than 0 if the process should stop after processing
             the given number of chunks, otherwise 0. By default 0.
@@ -210,7 +204,6 @@ class OASAdapterJSON(OASAdapterBase):
             distance_measure_kwargs=distance_measure_kwargs,
             anchor_dist_compression=anchor_dist_compression,
             anchor_dist_compression_level=anchor_dist_compression_level,
-            convert_json=convert_json,
             save_anchor_dists=save_anchor_dists
         )
 

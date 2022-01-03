@@ -351,7 +351,6 @@ def main(env_name: str, seq_from_name: Optional[str] = None, seq_to_name: Option
     morph_coords_list = compute_coords.get_coords(
         env_name=env_name,
         seq_list=[json.dumps(x) for x in morph_seqs_numbered],
-        convert_json=True,
         app_cfg=appcfg
     )
 

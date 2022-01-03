@@ -24,7 +24,6 @@ anchor:
   build_image_folder: build/anchor/img
   build_db_file: anchor.db
   seq_field: 'aa_annotated' # Field containing the sequence value to use.
-  seq_field_is_json: True # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
   method: MDS  # MDS, TSNE, PCA
   random_state: 2
   

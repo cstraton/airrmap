@@ -10,7 +10,7 @@ from airrmap.application.config import AppConfig
 
 
 # %%
-def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: AppConfig = None):
+def get_coords(env_name: str, seq_list: List[Any], app_cfg: AppConfig = None):
     """
     Computes the coordinates for a small list of sequences on the fly.
 
@@ -28,9 +28,6 @@ def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: A
         The list of sequences to compute the sequences for.
         Note that these should match the sequences used for the anchors.
         e.g. If the anchors are CDR3, then CDR3 sequences should be provided.
-
-    convert_json : bool or int
-        See OASAdapterBase.process_single_record() for options.
 
     app_cfg : AppConfig (optional)
         Application configuration to use, including the base path for the 
@@ -50,8 +47,6 @@ def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: A
     distance_measure_name = env_cfg['distance_measure']
     distance_measure_kwargs = env_cfg['distance_measure_options']
     anchor_seq_field = cfganc['seq_field']
-    anchor_convert_json = cfganc['seq_field_is_json']
-    sequence_seq_field_is_json = False
     sequence_num_closest_anchors = cfgseq['num_closest_anchors']
     
 
@@ -61,17 +56,9 @@ def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: A
         fn=None,
         seq_row_start=0,  # not used
         fn_anchors=fn_anchors,
-        anchor_seq_field=anchor_seq_field,
-        anchor_convert_json=anchor_convert_json
+        anchor_seq_field=anchor_seq_field
     )
     d_anchors: Dict[int, AnchorItem] = prep_args['anchors']
-
-    # Check anchors and sequences are same format
-    # (may be able to remove this in the future, added
-    #  to prevent accidentally providing the wrong format)
-    if anchor_convert_json != convert_json:
-        raise ValueError(
-            'Sequence format does not match that used for the anchors.')
 
     # Compute the sequence coordinates
     result_list = []
@@ -81,8 +68,7 @@ def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: A
             anchors=d_anchors,
             num_closest_anchors=sequence_num_closest_anchors,
             distance_measure_name=distance_measure_name,
-            distance_measure_kwargs=distance_measure_kwargs,
-            convert_json=convert_json
+            distance_measure_kwargs=distance_measure_kwargs
         )
         result_list.append(result)
 
@@ -95,8 +81,7 @@ def get_single_coords(
         anchors: Dict[int, AnchorItem],
         num_closest_anchors: int,
         distance_measure_name: str,
-        distance_measure_kwargs: Dict,
-        convert_json: Any) -> Dict[str, Any]:
+        distance_measure_kwargs: Dict) -> Dict[str, Any]:
 
     # Wrap the sequence in a dictionary
     dummy_row = dict(seq=seq)
@@ -108,7 +93,6 @@ def get_single_coords(
         num_closest_anchors=num_closest_anchors,
         distance_measure_name=distance_measure_name,
         distance_measure_kwargs=distance_measure_kwargs,
-        convert_json=convert_json,
         save_anchor_dists=False
     )
 

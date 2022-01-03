@@ -65,7 +65,6 @@ def get_df_dists(env_name: str,
     distance_function = getattr(distance, distance_measure)
     random_state = anccfg['random_state']
     seq_column = seqcfg['seq_field']
-    seq_is_json = seqcfg['seq_field_is_json']
 
     # Get Parquet record files
     seq_files = appcfg.get_seq_files(
@@ -115,15 +114,13 @@ def get_df_dists(env_name: str,
         # and xy coords
         point1 = df1.iloc[i]
         point1_id = point1['sys_point_id']
-        point1_seq = point1[seq_column] if not seq_is_json else json.loads(
-            point1[seq_column])
+        point1_seq = point1[seq_column]
         point1_x = point1['sys_coords_x']
         point1_y = point1['sys_coords_y']
 
         point2 = df2.iloc[i]
         point2_id = point2['sys_point_id']
-        point2_seq = point2[seq_column] if not seq_is_json else json.loads(
-            point2[seq_column])
+        point2_seq = point2[seq_column]
         point2_x = point2['sys_coords_x']
         point2_y = point2['sys_coords_y']
 

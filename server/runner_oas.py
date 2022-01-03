@@ -59,13 +59,11 @@ def main(argv):
     fn_anchor_db = os.path.join(
         env_folder, cfganc['build_folder'], cfganc['build_db_file'])
     anchor_seq_field = cfganc['seq_field']
-    anchor_seq_field_is_json = cfganc['seq_field_is_json']
     num_closest_anchors = cfgseq['num_closest_anchors']
     save_anchor_dists = cfgseq['save_anchor_dists']
     anchor_dist_compression = cfgseq['anchor_dist_compression']
     anchor_dist_compression_level = cfgseq['anchor_dist_compression_level']
     seq_field = cfgseq['seq_field']
-    seq_field_is_json = cfgseq['seq_field_is_json']
     seq_id_field = cfgseq['seq_id_field']
     seq_row_start = cfgseq['seq_row_start']
     output_file_compression = cfgseq['output_file_compression']
@@ -157,8 +155,7 @@ def main(argv):
             fn=fn_data_unit,
             seq_row_start=seq_row_start,
             fn_anchors=fn_anchor_db,
-            anchor_seq_field=anchor_seq_field,
-            anchor_convert_json=anchor_seq_field_is_json
+            anchor_seq_field=anchor_seq_field
         )
         log.info('Finished preparing initial arguments.')
 
@@ -199,7 +196,6 @@ def main(argv):
             save_anchor_dists=save_anchor_dists,
             anchor_dist_compression=anchor_dist_compression,
             anchor_dist_compression_level=anchor_dist_compression_level,
-            convert_json=seq_field_is_json,
             stop_after_n_chunks=0,
             nb_workers=process_nb_workers
         )

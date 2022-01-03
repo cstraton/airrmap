@@ -53,7 +53,6 @@ distance_measure_name = 'measure_distance_lev1'  # 'measure_distance3'
 distance_measure_func = getattr(distance, distance_measure_name)
 distance_measure_kwargs: Dict = {}  # dict(regions=['cdrh1', 'cdrh2'])
 reduction_method = 'MDS'  # 'UMAP' 'MDS'
-convert_json = False  # True
 def anchor_seq_transform(x): return x  # json.loads
 def seq_transform(x): return x  # json.loads
 
@@ -185,7 +184,6 @@ def get_coords_using_mlat(
         num_closest_anchors: int,
         distance_measure_name: str,
         distance_measure_kwargs: Dict,
-        convert_json: Union[bool, int],
         use_mae: bool):
     """
     Compute the coordinates for given sequeunces using multilateration.
@@ -209,11 +207,6 @@ def get_coords_using_mlat(
 
     distance_measure_kwargs : Dict
         Any arguments for the distance measure.
-
-    convert_json : Union[bool, int]
-        Whether the sequence must be converted from json.
-        True or 1 for standard double-quoted JSON, 2 for
-        single-quoted, or False/0 for strings.
 
     use_mae : bool
         True to use mean absolute error instead of
@@ -240,7 +233,6 @@ def get_coords_using_mlat(
             num_closest_anchors=num_closest_anchors,
             distance_measure_name=distance_measure_name,
             distance_measure_kwargs=distance_measure_kwargs,
-            convert_json=convert_json,
             save_anchor_dists=True,
             use_mae=use_mae
         )
@@ -441,7 +433,6 @@ for num_anchors in num_anchors_list:
         num_closest_anchors=0,  # Use all anchors
         distance_measure_name=distance_measure_name,
         distance_measure_kwargs=distance_measure_kwargs,
-        convert_json=convert_json,
         use_mae=use_mae
     )
 
