@@ -279,7 +279,7 @@ def main(env_name: str, seq_from_name: Optional[str] = None, seq_to_name: Option
     envcfg = appcfg.get_env_config(env_name)
     seqcfg = envcfg['sequence']
     anccfg = envcfg['anchor']
-    seq_regions = anccfg['regions']  # e.g. cdrh1, cdrh2
+    seq_regions = envcfg['distance_measure_options']['regions']  # e.g. cdrh1, cdrh2
 
     # %% Get query
     query = RepoQuery(env_name,

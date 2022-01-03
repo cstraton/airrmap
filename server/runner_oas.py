@@ -55,7 +55,7 @@ def main(argv):
 
     # Get params
     distance_measure = cfg['distance_measure']
-    distance_measure_kwargs = dict(regions=cfganc['regions'])
+    distance_measure_kwargs = cfg['distance_measure_options']
     fn_anchor_db = os.path.join(
         env_folder, cfganc['build_folder'], cfganc['build_db_file'])
     anchor_seq_field = cfganc['seq_field']

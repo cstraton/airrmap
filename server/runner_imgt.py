@@ -32,9 +32,9 @@ def main(argv):
     with open(fn_config) as f:
         envcfg = yaml.load(f, Loader=yaml.FullLoader)
     distance_measure = envcfg['distance_measure']
+    distance_measure_options = envcfg['distance_measure_options']
     cfg = envcfg['anchor']
     method = cfg['method']
-    regions = cfg['regions']
     src_folder = cfg['src_folder']
     output_folder = cfg['build_folder']
     output_image_folder = cfg['build_image_folder']
@@ -65,7 +65,7 @@ def main(argv):
                      seq_field_is_json=seq_field_is_json,
                      dimension_reduction_method=method,
                      distance_measure=distance_measure,
-                     distance_measure_kwargs={'regions': regions},
+                     distance_measure_kwargs=distance_measure_options,
                      random_state=random_state,
                      n_neighbors=n_neighbors)
 

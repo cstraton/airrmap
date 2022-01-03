@@ -2,6 +2,7 @@
 # File paths should be relative to base folder.
 
 # Version history (Remember to update 'version' property below)
+# 1.19 - Replace anchor.regions with distance_measure_options
 # 1.18 - Move distance_measure to header
 # 1.17 - Remove application.numbered_seq_field and application.numbered_seq_field_is_json
 # 1.16 - Rename application.seq_logo_fields to application.seq_logos
@@ -23,7 +24,7 @@
 # 1.01 - Add anchor.n_neighbors for UMAP (optional)
 # 1.00 - Initial
 
-version: 1.18
+version: 1.19
 
 # Header
 title: Environment name.
@@ -31,6 +32,10 @@ description: Your description here.
 author: Author name.
 date_created: 2021-04-30
 distance_measure: measure_distance3
+distance_measure_options:
+  regions: # Regions to combine. Used for measure_distance3.
+    - cdrh1
+    - cdrh2
 meta: none.
 
 
@@ -47,9 +52,6 @@ anchor:
   method: MDS  # MDS, TSNE, PCA, UMAP
   random_state: 2
   n_neighbors: 100 # UMAP only, optional (default 100).
-  regions:  # Regions to combine. Used for measure_distance3, and reporting (e.g. sequence logo).
-    - cdrh1
-    - cdrh2
   
 # Sequences
 sequence:

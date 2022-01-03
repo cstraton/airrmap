@@ -48,7 +48,7 @@ def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: A
     cfganc = env_cfg['anchor']
     cfgseq = env_cfg['sequence']
     distance_measure_name = env_cfg['distance_measure']
-    distance_measure_kwargs = dict(regions=cfganc['regions'])
+    distance_measure_kwargs = env_cfg['distance_measure_options']
     anchor_seq_field = cfganc['seq_field']
     anchor_convert_json = cfganc['seq_field_is_json']
     sequence_seq_field_is_json = False
