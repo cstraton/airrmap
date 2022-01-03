@@ -9,6 +9,8 @@ description: Basic environment for unit tests.
 author: sys
 date_created: 2021-04-22
 meta: none.
+distance_measure: measure_distance3
+distance_measure_args: null
 
 # Anchors
 anchor:
@@ -22,7 +24,6 @@ anchor:
   seq_field_is_json: True # 0 or False if not json, 1 or True if double-quoted JSON, 2 if single-quoted JSON.
   method: MDS  # MDS, TSNE, PCA
   random_state: 2
-  distance_measure: measure_distance3
   regions: 
     - cdrh1
     - cdrh2

@@ -54,12 +54,12 @@ def main(argv):
     cfganc = cfg['anchor']
 
     # Get params
+    distance_measure = cfg['distance_measure']
+    distance_measure_kwargs = dict(regions=cfganc['regions'])
     fn_anchor_db = os.path.join(
         env_folder, cfganc['build_folder'], cfganc['build_db_file'])
     anchor_seq_field = cfganc['seq_field']
     anchor_seq_field_is_json = cfganc['seq_field_is_json']
-    distance_measure = cfganc['distance_measure']
-    distance_measure_kwargs = dict(regions=cfganc['regions'])
     num_closest_anchors = cfgseq['num_closest_anchors']
     save_anchor_dists = cfgseq['save_anchor_dists']
     anchor_dist_compression = cfgseq['anchor_dist_compression']

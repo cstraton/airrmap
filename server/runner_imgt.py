@@ -30,11 +30,11 @@ def main(argv):
     # Load envconfig.yaml
     fn_config = os.path.join(env_folder, 'envconfig.yaml')
     with open(fn_config) as f:
-        cfg = yaml.load(f, Loader=yaml.FullLoader)
-    cfg = cfg['anchor']
+        envcfg = yaml.load(f, Loader=yaml.FullLoader)
+    distance_measure = envcfg['distance_measure']
+    cfg = envcfg['anchor']
     method = cfg['method']
     regions = cfg['regions']
-    distance_measure = cfg['distance_measure']
     src_folder = cfg['src_folder']
     output_folder = cfg['build_folder']
     output_image_folder = cfg['build_image_folder']

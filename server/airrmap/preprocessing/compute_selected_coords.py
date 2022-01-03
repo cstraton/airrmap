@@ -47,12 +47,13 @@ def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: A
     env_cfg = app_cfg.get_env_config(env_name)
     cfganc = env_cfg['anchor']
     cfgseq = env_cfg['sequence']
+    distance_measure_name = env_cfg['distance_measure']
+    distance_measure_kwargs = dict(regions=cfganc['regions'])
     anchor_seq_field = cfganc['seq_field']
     anchor_convert_json = cfganc['seq_field_is_json']
     sequence_seq_field_is_json = False
     sequence_num_closest_anchors = cfgseq['num_closest_anchors']
-    distance_measure_name = cfganc['distance_measure']
-    distance_measure_kwargs = dict(regions=cfganc['regions'])
+    
 
     # Load anchors
     fn_anchors = app_cfg.get_anchordb(env_name)

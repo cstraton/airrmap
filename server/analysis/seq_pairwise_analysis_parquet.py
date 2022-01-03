@@ -61,7 +61,7 @@ def get_df_dists(env_name: str,
     seqcfg = envcfg['sequence']
     anccfg = envcfg['anchor']
     regions = anccfg['regions']
-    distance_measure = anccfg['distance_measure']
+    distance_measure = envcfg['distance_measure']
     distance_function = getattr(distance, distance_measure)
     random_state = anccfg['random_state']
     seq_column = seqcfg['seq_field']
