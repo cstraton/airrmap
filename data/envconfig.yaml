@@ -2,6 +2,8 @@
 # File paths should be relative to base folder.
 
 # Version history (Remember to update 'version' property below)
+# 1.22 - Add anchor.seq_id_field
+# 1.21 - Add anchor.group_field
 # 1.20 - Remove anchor.seq_field_is_json and sequence.seq_field_is_json
 # 1.19 - Replace anchor.regions with distance_measure_options
 # 1.18 - Move distance_measure to header
@@ -25,7 +27,7 @@
 # 1.01 - Add anchor.n_neighbors for UMAP (optional)
 # 1.00 - Initial
 
-version: 1.20
+version: 1.22
 
 # Header
 title: Environment name.
@@ -49,6 +51,8 @@ anchor:
   build_image_folder: build/anchor/img
   build_db_file: anchor.db
   seq_field: 'aa_annotated' # Field containing the sequence value to use.
+  seq_id_field: 'name' # Unique anchor identifier
+  group_field: 'v_subgroup' # Used for distortion plots (e.g. colour coding) during preprocessing. Use null if not required.
   method: MDS  # MDS, TSNE, PCA, UMAP
   random_state: 2
   n_neighbors: 100 # UMAP only, optional (default 100).

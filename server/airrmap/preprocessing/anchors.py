@@ -9,7 +9,7 @@ from plotly.graph_objs._figure import Figure
 from sklearn import manifold
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import pdist, squareform
-
+from typing import Any, Dict, Optional, Tuple
 
 
 def _coord_distances(df_coords: pd.DataFrame, df_orig_dist: pd.DataFrame) -> pd.DataFrame:
@@ -151,14 +151,22 @@ def compute_coords(df_dist_matrix: pd.DataFrame,
     return df_coords, df_dist_melted
 
 
-def plot_anchor_distortion(df_melted: pd.DataFrame) -> Figure:
-    """Generate anchor distortion plots.
+def plot_anchor_distortion(df_melted: pd.DataFrame, seq_id_group_map: Optional[Dict[Any, Any]] = None) -> Tuple[Figure, Figure]:
+    """
+    Generate anchor distortion plots.
 
-    Args:
-        df (DataFrame): Original and plotted distances (df_melted)
+    Parameters
+    ----------
+    df_melted : pd.DataFrame
+        Original and plotted distances (df_melted).
 
-    Returns:
-        Tuple(Figure, Figure): Plotly figures (groups, overall)
+    seq_id_group_map : Optional[Dict[Any, Any]], optional
+        Dictionary that maps anchor ID to anchor group, by default None.
+
+    Returns
+    -------
+    Tuple[Figure, Figure]:
+        Plotly distortion figures (subgroups and overall)
     """
 
     # Init
@@ -166,10 +174,16 @@ def plot_anchor_distortion(df_melted: pd.DataFrame) -> Figure:
     df = df.reset_index()
 
     # Get groups (IGHV1 etc.)
-    df['group_name'] = [x[:5]
-                        for x in list(df['index'])]
-    df['group_name2'] = [x[:5]
-                         for x in list(df['item2'])]
+    if seq_id_group_map is not None:
+        df['group_name'] = df['index'].apply(
+            lambda x: seq_id_group_map[x]
+        )
+        df['group_name2'] = df['item2'].apply(
+            lambda x: seq_id_group_map[x]
+        )
+    else:
+        df['group_name'] = ''
+        df['group_name2'] = ''
 
     is_same_group = df['group_name'] == df['group_name2']
 
@@ -191,22 +205,36 @@ def plot_anchor_distortion(df_melted: pd.DataFrame) -> Figure:
 
 
 # %% Plot anchors
-def plot_anchor_positions(df_coords: pd.DataFrame) -> Figure:
-    """Scatter plot of anchor coordinates
+def plot_anchor_positions(df_coords: pd.DataFrame, seq_id_group_map: Optional[Dict[Any, Any]] = None) -> Figure:
+    """
+    Scatter plot of anchor coordinates.
 
-    Args:
-        df_coords (pd.DataFrame): Anchor coordinates. Index should be the name of the allele.
-            First 5 characters will be used for group (e.g. IGHV1)
+    Parameters
+    ----------
+    df_coords : pd.DataFrame
+        Anchor coordinates. Index should be the unique ID of the anchor.
 
-    Returns:
-        Figure: Plotly scatter figure, coloured by group.
+    seq_id_group_map : Optional[Dict[Any, Any]], optional
+        Dictionary that maps anchor ID to anchor group, by default None.
+
+    Returns
+    -------
+    Figure
+        Plotly scatter figure, coloured by group.
     """
 
     df = df_coords.copy()
     df = df.reset_index()
 
-    # group by IGHV1 etc.
-    df['group_name'] = [x[:5] for x in list(df['index'])]
+    # Get groups (IGHV1 etc.)
+    if seq_id_group_map is not None:
+        df['group_name'] = df['index'].apply(
+            lambda x: seq_id_group_map[x]
+        )
+
+    else:
+        df['group_name'] = ''
+
     fig = px.scatter(x=df['x'], y=df['y'],
                      color=df['group_name'])
 
