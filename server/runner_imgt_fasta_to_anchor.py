@@ -40,6 +40,12 @@ def run(args):
             lambda x: x.replace('.', '')
         )
 
+    # Add v_subgroup field from name
+    # e.g. IGHV7-4-1*03 > IGHV7
+    df_imgt['v_subgroup'] = df_imgt['name'].apply(
+        lambda x: x[:5]
+    )
+
     # Save
     df_imgt.to_csv(args.out_file)
     print(f'{len(df_imgt)} record(s) written to {args.out_file}')
