@@ -121,7 +121,7 @@ def measure_distance2(string1: str, string2: str):
     return dist
 
 
-def measure_distance3(item1: Any, item2: Any, regions: list):
+def measure_distance3(record1: Any, record2: Any, numbered_seq_field: str, regions: list):
     """
     Measure distance 3.
 
@@ -130,25 +130,47 @@ def measure_distance3(item1: Any, item2: Any, regions: list):
     CARE!: +1 distance will be added to any gaps - consider this if using different
     lengths / partials, or if the annotated sequence contains '.' items.
 
-    :param item1: The sequence. Should be a dictionary or JSON, e.g.:
-    record {} -> region ('cdrh2') -> residue number (imgt '26').
+    Parameters
+    ----------
+    record1 : Any
+        Dict-like record.
 
-    :param item2: Second annotated sequence.
-    :param regions: List of regions to compare. Each item must contain
-    all regions passed (otherwise exception occurs).
+    record2 : Any
+        Dict-like record.
 
+    numbered_seq_field : Any
+        The column in item1 and item2 that contains the
+        Dict-like or JSON annotated sequence.
+        e.g.: record {} -> region ('cdrh2') -> residue number (imgt '26').
+
+    regions : list
+        List of regions to compare. Each item must contain
+        all regions passed (otherwise exception occurs).
+
+    Returns
+    -------
+    int
+        The computed distance.
+
+    Raises
+    ------
+    Exception
+        If either item/record doesn't contain all regions.
     """
 
     # Ensure at least one region
     if len(regions) < 1:
         raise Exception('No regions provided')
 
+    # Get numbered sequence field
+    item1 = record1[numbered_seq_field]
+    item2 = record2[numbered_seq_field]
+
     # Convert to JSON if required
     if not isinstance(item1, collections.Mapping):
         item1 = json.loads(item1)
     if not isinstance(item2, collections.Mapping):
         item2 = json.loads(item2)
-
 
     total_distance = 0
     for region_key in regions:
@@ -204,7 +226,7 @@ def measure_distance_lev2(item1: Any, item2: Any, columns: List[str]) -> int:
         The Levenshtein distance for the
         concatentated column values.
     """
-
+    
     return levenshtein(
         ''.join([item1[x] for x in columns]),
         ''.join([item2[y] for y in columns])
@@ -248,7 +270,7 @@ def create_distance_matrix(records: pd.DataFrame, distance_function: Callable,
         record2 = records.loc[key2]
 
         dist = distance_function(
-            record1[measure_value], record2[measure_value], **kwargs)
+            record1, record2, **kwargs)
         df_distances.at[key1, key2] = dist
         df_distances.at[key2, key1] = dist
 

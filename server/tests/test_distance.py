@@ -37,43 +37,80 @@ class TestDistances(unittest.TestCase):
 
     def test_measure_distance3(self):
         item1 = dict(
-            cdr1=dict(i1='A', i2='B'),
-            cdr2=dict(i1='C', i2='D'))
+            numbered_seq_field=dict(
+                cdr1=dict(i1='A', i2='B'),
+                cdr2=dict(i1='C', i2='D'))
+        )
         item2 = dict(
-            cdr1=dict(i1='A', i2='B', i3='Extra'),
-            cdr2=dict(i1='C', i2='D'))
+            numbered_seq_field=dict(
+                cdr1=dict(i1='A', i2='B', i3='Extra'),
+                cdr2=dict(i1='C', i2='D'))
+        )
+
         item3 = dict(
-            cdr1=dict(i1='U', i2='V'),
-            cdr2=dict(i1='Y', i2='Z'))
-        
-        item1_json = json.dumps(item1)
-        item3_json = json.dumps(item3)
+            numbered_seq_field=dict(
+                cdr1=dict(i1='U', i2='V'),
+                cdr2=dict(i1='Y', i2='Z'))
+        )
+
+        item1_json = dict(
+            numbered_seq_field=json.dumps(item1['numbered_seq_field'])
+        )
+        item3_json = dict(
+            numbered_seq_field=json.dumps(item3['numbered_seq_field'])
+        )
 
         # Same
         self.assertEqual(
-            measure_distance3(item1, item1, ['cdr1', 'cdr2']), 0, 'Same')
+            measure_distance3(
+                record1=item1,
+                record2=item1,
+                numbered_seq_field='numbered_seq_field',
+                regions=['cdr1', 'cdr2']
+            ), 0, 'Same')
 
         # Same number, different values
         self.assertEqual(
-            measure_distance3(item1, item3, ['cdr1', 'cdr2']), 4, 'Different values')
+            measure_distance3(
+                record1=item1,
+                record2=item3,
+                numbered_seq_field='numbered_seq_field',
+                regions=['cdr1', 'cdr2']
+            ), 4, 'Different values')
 
         # Same number, different values, JSON string (check conversion to dict)
         self.assertEqual(
-            measure_distance3(item1_json, item3_json, ['cdr1', 'cdr2']), 4, 'Different values (json)')
+            measure_distance3(
+                record1=item1_json,
+                record2=item3_json,
+                numbered_seq_field='numbered_seq_field',
+                regions=['cdr1', 'cdr2']
+            ), 4, 'Different values (json)')
 
         # +1 Extra
         self.assertEqual(
-            measure_distance3(item1, item2, ['cdr1', 'cdr2']), 1, 'Extra')
+            measure_distance3(
+                record1=item1,
+                record2=item2,
+                numbered_seq_field='numbered_seq_field',
+                regions=['cdr1', 'cdr2']
+            ), 1, 'Extra')
 
         # cdr2 only
         self.assertEqual(
-            measure_distance3(item1, item2, ['cdr2']), 0, 'CDR2 only')
+            measure_distance3(
+                record1=item1,
+                record2=item2,
+                numbered_seq_field='numbered_seq_field',
+                regions=['cdr2']
+            ), 0, 'CDR2 only')
 
         # Exception if region doesn't exist
         self.assertRaises(KeyError,
                           measure_distance3,
                           item1,
                           item1,
+                          'numbered_seq_field',
                           ['bad_region'])
 
         # Exception if no regions
@@ -81,8 +118,8 @@ class TestDistances(unittest.TestCase):
                           measure_distance3,
                           item1,
                           item1,
+                          'numbered_seq_field',
                           [])
-
 
     def test_measure_distance_lev1(self):
         self.assertEqual(
