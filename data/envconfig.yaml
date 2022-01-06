@@ -2,6 +2,10 @@
 # File paths should be relative to base folder.
 
 # Version history (Remember to update 'version' property below)
+# 1.26 - Separate distance measure env-level and record-level kwargs.
+# 1.25 - Remove anchor.seq_field and sequence.seq_field (now uses distance_measure_options)
+# 1.24 - Add application.seq_markers
+# 1.23 - Move distance_measure_options to anchor and sequence sections.
 # 1.22 - Add anchor.seq_id_field
 # 1.21 - Add anchor.group_field
 # 1.20 - Remove anchor.seq_field_is_json and sequence.seq_field_is_json
@@ -27,7 +31,7 @@
 # 1.01 - Add anchor.n_neighbors for UMAP (optional)
 # 1.00 - Initial
 
-version: 1.22
+version: 1.26
 
 # Header
 title: Environment name.
@@ -35,12 +39,11 @@ description: Your description here.
 author: Author name.
 date_created: 2021-04-30
 distance_measure: measure_distance3
-distance_measure_options:
-  regions: # Regions to combine. Used for measure_distance3.
+distance_measure_env_kwargs: # Envrionment-level kwargs for the distance measure.
+  - regions:
     - cdrh1
     - cdrh2
 meta: none.
-
 
 # Anchors
 anchor:
@@ -50,13 +53,14 @@ anchor:
   build_folder: build/anchor
   build_image_folder: build/anchor/img
   build_db_file: anchor.db
-  seq_field: 'aa_annotated' # Field containing the sequence value to use.
   seq_id_field: 'name' # Unique anchor identifier
   group_field: 'v_subgroup' # Used for distortion plots (e.g. colour coding) during preprocessing. Use null if not required.
+  distance_measure_record_kwargs: # Record-level kwargs for the selected 'distance_measure'.
+    numbered_seq_field: aa_annotated
   method: MDS  # MDS, TSNE, PCA, UMAP
   random_state: 2
   n_neighbors: 100 # UMAP only, optional (default 100).
-  
+
 # Sequences
 sequence:
   src_folder: src/seq
@@ -64,9 +68,10 @@ sequence:
   build_folder: build/seq
   build_image_folder: build/seq/img
   build_db_files: \*.db # Remove.
-  seq_field: 'ANARCI_numbering' # Care! Use '*_aa' fields if OAS csv (e.g. 'cdr3_aa' NOT 'cdr3' which contains DNA). Field in data unit containing the sequence value to use.
   seq_id_field: null # Field to use as seq ID - must be integers. Use null to auto-generate.
   seq_row_start: 3 # Row that sequence records start.
+  distance_measure_record_kwargs: # Record-level kwargs for the selected 'distance_measure'. Used for MLAT / computation of seq coordinates.
+    numbered_seq_field: ANARCI_numbering
   num_closest_anchors: 0 # 0 all.
   save_anchor_dists: False # True to save binary-encoded anchor distances in the output records file (smaller file size and slightly faster processing if excluded).
   anchor_dist_compression: zlib  # zlib or gzip (only used if save_anchor_dists is True).
@@ -84,8 +89,15 @@ application:
   v_field: v_call  # Field containing the assigned V germline gene, or null. Used for reporting.
   d_field: d_call  # Field containing the assigned D germline gene, or null. Used for reporting.
   j_field: j_call  # Field containing the assigned J germline gene, or null. Used for reporting.
+  seq_markers: # Config for sequence markers (sequences entered into UI).
+    field_delim: "|" # Delimiter for handling multiple field values in UI.
+    field_mapping: # How UI delimited input should be mapped to record fields for the distance function.
+      - seq
+    distance_measure_record_kwargs:  # Record-level kwargs for the selected 'distance_measure'. For sequences entered in the UI.
+      numbered_seq_field: seq
+
   seq_logos: # Gapped sequences for sequence logos
-      - source_field: "cdr1_aa"
+      - source_field: "cdr1_aa" # Used during preprocessing as source for gapped_field.
         gapped_field: "seq_gapped_cdr1"
         fixed_length: 12 # High enough to accomodate longest sequence, otherwise error. Minimise to save space. (IMGT).
         title: "CDR1"

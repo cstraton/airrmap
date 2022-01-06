@@ -80,7 +80,7 @@ def parse_json_file(fn: str) -> pd.DataFrame:
     Parameters
     ----------
     fn : str
-        A json records file with minimum 'name' and [seq_field]
+        A json records file with minimum 'name' and one or more seq
         fields (see example). File may contain additional fields.
 
 

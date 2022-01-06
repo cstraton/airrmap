@@ -10,7 +10,7 @@ import airrmap.preprocessing.anchors as anchors
 import airrmap.preprocessing.distance as distance
 import argparse
 from tqdm import tqdm
-from typing import Union
+from typing import Dict, Union
 
 # %%  Module to run all
 
@@ -32,18 +32,18 @@ def main(argv):
     with open(fn_config) as f:
         envcfg = yaml.load(f, Loader=yaml.FullLoader)
     distance_measure = envcfg['distance_measure']
-    distance_measure_options = envcfg['distance_measure_options']
-    cfg = envcfg['anchor']
-    method = cfg['method']
-    src_folder = cfg['src_folder']
-    output_folder = cfg['build_folder']
-    output_image_folder = cfg['build_image_folder']
-    output_db_file = cfg['build_db_file']
-    seq_field = cfg['seq_field']
-    seq_id_field = cfg['seq_id_field']
-    group_field = cfg['group_field']
-    random_state = cfg['random_state']
-    n_neighbors = cfg['n_neighbors'] if 'n_neighbors' in cfg else 15
+    distance_measure_env_kwargs = envcfg['distance_measure_env_kwargs']
+    cfganc = envcfg['anchor']
+    distance_measure_record_kwargs = cfganc['distance_measure_record_kwargs']
+    method = cfganc['method']
+    src_folder = cfganc['src_folder']
+    output_folder = cfganc['build_folder']
+    output_image_folder = cfganc['build_image_folder']
+    output_db_file = cfganc['build_db_file']
+    seq_id_field = cfganc['seq_id_field']
+    group_field = cfganc['group_field']
+    random_state = cfganc['random_state']
+    n_neighbors = cfganc['n_neighbors'] if 'n_neighbors' in cfganc else 15
 
     # Clear previous files
     helpers.clear_folder_or_create(os.path.join(env_folder,
@@ -52,7 +52,7 @@ def main(argv):
         os.path.join(env_folder, output_image_folder))
 
     # Process each file
-    for fn_anchor_file in tqdm(cfg['src_files'], desc='Processing anchor files...'):
+    for fn_anchor_file in tqdm(cfganc['src_files'], desc='Processing anchor files...'):
 
         process_anchors(env_folder=env_folder,
                         src_folder=src_folder,
@@ -60,12 +60,12 @@ def main(argv):
                         output_folder=output_folder,
                         output_image_folder=output_image_folder,
                         output_db_file=output_db_file,
-                        seq_field=seq_field,
                         seq_id_field=seq_id_field,
                         group_field=group_field,
                         dimension_reduction_method=method,
                         distance_measure=distance_measure,
-                        distance_measure_kwargs=distance_measure_options,
+                        distance_measure_env_kwargs=distance_measure_env_kwargs,
+                        distance_measure_record_kwargs=distance_measure_record_kwargs,
                         random_state=random_state,
                         n_neighbors=n_neighbors)
 
@@ -76,12 +76,12 @@ def process_anchors(env_folder: str,
                     output_folder: str,
                     output_image_folder: str,
                     output_db_file: str,
-                    seq_field: str,
                     seq_id_field: str,
                     group_field: Union[str, None],
                     dimension_reduction_method: str,
                     distance_measure: str,
-                    distance_measure_kwargs: dict,
+                    distance_measure_env_kwargs: Dict,
+                    distance_measure_record_kwargs: Dict,
                     random_state: int,
                     n_neighbors: int):
 
@@ -115,8 +115,8 @@ def process_anchors(env_folder: str,
     df_dist_matrix = distance.create_distance_matrix(
         records=df_anchors,
         distance_function=dist_function,
-        measure_value=seq_field,
-        **distance_measure_kwargs
+        record_kwargs=distance_measure_record_kwargs,
+        env_kwargs=distance_measure_env_kwargs
     )
     log.info('Finished computing pairwise distance matrices.')
 

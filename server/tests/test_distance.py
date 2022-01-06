@@ -18,12 +18,33 @@ class TestDistances(unittest.TestCase):
 
     def test_measure_distance1(self):
         """Check correct distance reported for different lengths"""
-        self.assertEqual(measure_distance1('Hello', 'Hello'), 0, "Should be 0")
-        self.assertEqual(measure_distance1(
-            'Hello1', 'Hello'), 1, "Should be 1")
-        self.assertEqual(measure_distance1(
-            'Hello', 'Hello1'), 1, "Should be 1")
-        self.assertEqual(measure_distance1('abcd', 'dcba'), 4, "Should be 4")
+
+        # Create tests
+        # 0: String 1
+        # 1: String 2
+        # 2: Expected return value
+        # 3: Message
+        string_values = [
+            ('Hello', 'Hello', 0, 'Should be 0'),
+            ('Hello1', 'Hello', 1, 'Should be 1'),
+            ('Hello', 'Hello1', 1, 'Should be 1'),
+            ('abcd', 'dcba', 4, 'Should be 4')
+        ]
+        env_kwargs = dict()
+        record_kwargs = dict(seq='seq')
+
+        for i in range(len(string_values)):
+            self.assertEqual(
+                measure_distance1(
+                    record1=dict(seq=string_values[i][0]),
+                    record2=dict(seq=string_values[i][1]),
+                    record1_kwargs=record_kwargs,
+                    record2_kwargs=record_kwargs,
+                    env_kwargs=env_kwargs
+                ),
+                string_values[i][2],
+                string_values[i][3]
+            )
 
     def test_measure_distance2(self):
         self.assertEqual(measure_distance2('Hello', 'Hello'), 0, "Should be 0")
@@ -60,13 +81,22 @@ class TestDistances(unittest.TestCase):
             numbered_seq_field=json.dumps(item3['numbered_seq_field'])
         )
 
+        # Set up kwargs
+        record_kwargs = dict(
+            numbered_seq_field='numbered_seq_field'
+        )
+        env_kwargs = dict(
+            regions=['cdr1', 'cdr2']
+        )
+
         # Same
         self.assertEqual(
             measure_distance3(
                 record1=item1,
                 record2=item1,
-                numbered_seq_field='numbered_seq_field',
-                regions=['cdr1', 'cdr2']
+                record1_kwargs=record_kwargs,
+                record2_kwargs=record_kwargs,
+                env_kwargs=env_kwargs
             ), 0, 'Same')
 
         # Same number, different values
@@ -74,8 +104,9 @@ class TestDistances(unittest.TestCase):
             measure_distance3(
                 record1=item1,
                 record2=item3,
-                numbered_seq_field='numbered_seq_field',
-                regions=['cdr1', 'cdr2']
+                record1_kwargs=record_kwargs,
+                record2_kwargs=record_kwargs,
+                env_kwargs=env_kwargs
             ), 4, 'Different values')
 
         # Same number, different values, JSON string (check conversion to dict)
@@ -83,8 +114,9 @@ class TestDistances(unittest.TestCase):
             measure_distance3(
                 record1=item1_json,
                 record2=item3_json,
-                numbered_seq_field='numbered_seq_field',
-                regions=['cdr1', 'cdr2']
+                record1_kwargs=record_kwargs,
+                record2_kwargs=record_kwargs,
+                env_kwargs=env_kwargs
             ), 4, 'Different values (json)')
 
         # +1 Extra
@@ -92,8 +124,9 @@ class TestDistances(unittest.TestCase):
             measure_distance3(
                 record1=item1,
                 record2=item2,
-                numbered_seq_field='numbered_seq_field',
-                regions=['cdr1', 'cdr2']
+                record1_kwargs=record_kwargs,
+                record2_kwargs=record_kwargs,
+                env_kwargs=env_kwargs
             ), 1, 'Extra')
 
         # cdr2 only
@@ -101,8 +134,9 @@ class TestDistances(unittest.TestCase):
             measure_distance3(
                 record1=item1,
                 record2=item2,
-                numbered_seq_field='numbered_seq_field',
-                regions=['cdr2']
+                record1_kwargs=record_kwargs,
+                record2_kwargs=record_kwargs,
+                env_kwargs=dict(regions=['cdr2'])
             ), 0, 'CDR2 only')
 
         # Exception if region doesn't exist
@@ -110,16 +144,18 @@ class TestDistances(unittest.TestCase):
                           measure_distance3,
                           item1,
                           item1,
-                          'numbered_seq_field',
-                          ['bad_region'])
+                          record_kwargs,
+                          record_kwargs,
+                          dict(regions=['bad_region']))
 
         # Exception if no regions
         self.assertRaises(Exception,
                           measure_distance3,
                           item1,
                           item1,
-                          'numbered_seq_field',
-                          [])
+                          record_kwargs,
+                          record_kwargs,
+                          dict(regions=[]))
 
     def test_measure_distance_lev1(self):
         self.assertEqual(
@@ -164,15 +200,18 @@ class TestDistances(unittest.TestCase):
             col1="ABD",  # dist=1
             col2="DGH"  # dist=2
         )
-        kwargs = dict(
+        record_kwargs = dict(
             columns=['col1', 'col2']
         )
+        env_kwargs = None
 
         self.assertEqual(
             measure_distance_lev2(
-                rec1,
-                rec2,
-                **kwargs
+                record1=rec1,
+                record2=rec2,
+                record1_kwargs=record_kwargs,
+                record2_kwargs=record_kwargs,
+                env_kwargs=env_kwargs
             ),
             3,
             'Distance should be 3.'
@@ -182,8 +221,15 @@ class TestDistances(unittest.TestCase):
         """Check distance matrix"""
         records = self.records
         distance_func = measure_distance1
-        measure_value = 'seq'
-        df = create_distance_matrix(records, distance_func, measure_value)
+        record_kwargs = dict(
+            seq='seq'
+        )
+        df = create_distance_matrix(
+            records=records,
+            distance_function=distance_func,
+            record_kwargs=record_kwargs,
+            env_kwargs=dict()
+        )
         self.assertEqual(df['rec1']['rec2'], 1, "Should be 1")
         self.assertEqual(df['rec2']['rec1'], 1, "Should be 1")
         self.assertEqual(df['rec1']['rec1'], 0, "Should be 0")
@@ -199,9 +245,15 @@ class TestDistances(unittest.TestCase):
         # create_distance_matrix()
         records = self.records
         distance_func = measure_distance1
-        measure_value = 'seq'
+        record_kwargs = dict(
+            seq='seq'
+        )
         distmatrix = create_distance_matrix(
-            records, distance_func, measure_value)
+            records=records,
+            distance_function=distance_func,
+            record_kwargs=record_kwargs,
+            env_kwargs=dict()
+        )
 
         # compute_xy()
         xycoords = compute_xy(distmatrix, 'MDS', random_state=2)
