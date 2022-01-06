@@ -29,7 +29,6 @@ class TestComputeSelectedCoords(unittest.TestCase):
         result_list = compute_coords.get_coords(
             env_name = self.env_name,
             seq_list=seq_list,
-            convert_json=True,
             app_cfg=self.app_cfg
          )
 

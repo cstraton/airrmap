@@ -75,17 +75,17 @@ class OASAdapterJSON(OASAdapterBase):
                         openfunc: Callable,
                         record_count: int,
                         seq_id_field: str,
-                        seq_field: str,
                         anchors: Dict[int, AnchorItem],
                         num_closest_anchors: int,
                         distance_measure_name: str,
-                        distance_measure_kwargs: Dict,
+                        distance_measure_env_kwargs: Dict,
+                        distance_measure_seq_kwargs: Dict,
+                        distance_measure_anchor_kwargs: Dict,
                         compression='snappy',
                         chunk_size=5000,
                         save_anchor_dists=False,
                         anchor_dist_compression='zlib',
                         anchor_dist_compression_level=9,
-                        convert_json: Any = False,
                         stop_after_n_chunks: int = 0,
                         nb_workers: int = None):
         """
@@ -123,9 +123,6 @@ class OASAdapterJSON(OASAdapterBase):
             to make unique within the environment).
             Specify None to auto-generate.
 
-        seq_field : str
-            The field containing the sequence representation.
-
         anchors : Dict[int, AnchorItem]
             Dictionary of pre-processed AnchorItems.
 
@@ -136,9 +133,17 @@ class OASAdapterJSON(OASAdapterBase):
             The name of the distance function that will measure the
             distance between each sequence and the anchors.
 
-        distance_measure_kwargs : Dict
-            Additional keyword arguments required for the selected
-            distance function.
+        distance_measure_env_kwargs : Dict
+            Environment-level arguments required for the
+            selected distance measure.
+
+        distance_measure_seq_kwargs: Dict
+            Record-level arguments for the sequence records,
+            required for the selected distance measure.
+
+        distance_measure_anchor_kwargs : Dict
+            Record-level arguments for the anchor records,
+            required for the selected distance measure.
 
         compression : str, optional
             Compression to use for the output Parquet file.
@@ -159,11 +164,6 @@ class OASAdapterJSON(OASAdapterBase):
 
         anchor_dist_compression_level : int, optional
             Compression level to use if save_anchor_dists is True, by default 9 (highest).
-
-        convert_json : Any, optional
-            Select False or 0 if seq_field does not contain a JSON-encoded sequence,
-            True or 1 if seq_field contains standard double-quoted JSON, or
-            1 if single-quoted JSON. By default False.
 
         stop_after_n_chunks : int, optional
             Specify a value larger than 0 if the process should stop after processing
@@ -203,14 +203,14 @@ class OASAdapterJSON(OASAdapterBase):
         # Get arguments to process a single record
         # (for running in parallel)
         process_chunk_args = dict(
-            seq_field=seq_field,
             anchors=anchors,
             num_closest_anchors=num_closest_anchors,
             distance_measure_name=distance_measure_name,
-            distance_measure_kwargs=distance_measure_kwargs,
+            distance_measure_env_kwargs=distance_measure_env_kwargs,
+            distance_measure_seq_kwargs=distance_measure_seq_kwargs,
+            distance_measure_anchor_kwargs=distance_measure_anchor_kwargs,
             anchor_dist_compression=anchor_dist_compression,
             anchor_dist_compression_level=anchor_dist_compression_level,
-            convert_json=convert_json,
             save_anchor_dists=save_anchor_dists
         )
 

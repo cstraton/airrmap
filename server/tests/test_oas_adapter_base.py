@@ -62,14 +62,23 @@ class TestOASAdapterBase(unittest.TestCase):
                           encoded_bytes, decoder)
 
     def test_get_distances(self):
-        item1 = 'ABC'
+        item1 = dict(seq='ABC')
         items = {
-            1: AnchorItem(1, 'ABC', 0, 0),
-            2: AnchorItem(2, 'AB', 0, 0)
+            1: AnchorItem(1, data=dict(seq='ABC'), x=0, y=0),
+            2: AnchorItem(2, data=dict(seq='AB'), x=0, y=0)
         }
+        record_kwargs = dict(columns=['seq'])
+        env_kwargs = dict()
 
-        distance_func = distance.measure_distance_lev1
-        distances_d = OASAdapterBase.get_distances(item1, items, distance_func)
+        distance_func = distance.measure_distance_lev2
+        distances_d = OASAdapterBase.get_distances(
+            item1=item1, 
+            items=items, 
+            measure_function=distance_func, 
+            item1_measure_kwargs=record_kwargs, 
+            items_measure_kwargs=record_kwargs, 
+            env_measure_kwargs=env_kwargs
+        )
         self.assertDictEqual(distances_d, {1: 0, 2: 1})
 
     def test_compute_sequence_coords(self):
@@ -81,9 +90,9 @@ class TestOASAdapterBase(unittest.TestCase):
         )
 
         anchors = {
-            1: AnchorItem(anchor_id=1, seq='ABC', x=1, y=3),
-            2: AnchorItem(anchor_id=2, seq='DEF', x=2, y=3),
-            3: AnchorItem(anchor_id=3, seq='GHI', x=4, y=5)
+            1: AnchorItem(anchor_id=1, data=dict(seq='ABC'), x=1, y=3),
+            2: AnchorItem(anchor_id=2, data=dict(seq='DEF'), x=2, y=3),
+            3: AnchorItem(anchor_id=3, data=dict(seq='GHI'), x=4, y=5)
         }
 
         num_closest_anchors = 2

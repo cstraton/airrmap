@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import itertools
 import random
+import collections
+import json
 from polyleven import levenshtein
 
 from tqdm import tqdm
@@ -14,7 +16,7 @@ from sklearn import manifold
 from sklearn.decomposition import PCA
 from scipy.spatial import distance as scipydist
 from scipy.spatial.distance import pdist, squareform
-from typing import Callable, List, Tuple, Any
+from typing import Callable, Dict, Optional, Any
 
 
 def compute_euclidean(x1, y1, x2, y2):
@@ -31,7 +33,7 @@ def compute_euclidean(x1, y1, x2, y2):
     return (dx + dy)**0.5
 
 
-def measure_distance1(string1: str, string2: str):
+def measure_distance1(record1: Dict, record2: Dict, record1_kwargs: Dict, record2_kwargs: Dict, env_kwargs: Dict):
     """
     Measure distance 1.
 
@@ -39,7 +41,14 @@ def measure_distance1(string1: str, string2: str):
     starting from the first character.
     Distance is +1 for every different
     or different or additional character.
+
+    record1_kwargs and record2_kwargs should
+    contain a 'seq' property with the string
+    to compare.
     """
+
+    string1 = record1[record1_kwargs['seq']]
+    string2 = record2[record2_kwargs['seq']]
 
     # Get longest (a) and shortest (b)
     if len(string1) >= len(string2):
@@ -119,7 +128,7 @@ def measure_distance2(string1: str, string2: str):
     return dist
 
 
-def measure_distance3(item1: dict, item2: dict, regions: list):
+def measure_distance3(record1: Any, record2: Any, record1_kwargs: Dict, record2_kwargs: Dict, env_kwargs: Dict):
     """
     Measure distance 3.
 
@@ -128,18 +137,57 @@ def measure_distance3(item1: dict, item2: dict, regions: list):
     CARE!: +1 distance will be added to any gaps - consider this if using different
     lengths / partials, or if the annotated sequence contains '.' items.
 
-    :param item1: The sequence. Should be a dictionary, e.g.:
-    record {} -> region ('cdrh2') -> residue number (imgt '26').
+    Parameters
+    ----------
+    record1 : Any
+        Dict-like record.
 
-    :param item2: Second annotated sequence.
-    :param regions: List of regions to compare. Each item must contain
-    all regions passed (otherwise exception occurs).
+    record2 : Any
+        Dict-like record.
 
+    record1_kwargs : Dict
+        Should contain a 'numbered_seq_field' property
+        that points to the property in record1 containing
+        a Dict-like or JSON-annotated sequence.
+        e.g.: record {} -> region ('cdrh2') -> residue number (imgt '26').
+
+    record2_kwargs : Dict
+        Should contain a 'numbered_seq_field' property
+        that points to the property in record2 containing
+        a Dict-like or JSON-annotated sequence.
+        e.g.: record {} -> region ('cdrh2') -> residue number (imgt '26').
+
+    env_kwargs : Dict
+        Should contain a 'regions' property; a List containing
+        the region names to compare.
+        e.g. ['cdrh1', 'cdrh2']
+
+    Returns
+    -------
+    int
+        The computed distance.
+
+    Raises
+    ------
+    Exception
+        If either item/record doesn't contain all regions.
     """
 
     # Ensure at least one region
+    regions = env_kwargs['regions']
     if len(regions) < 1:
         raise Exception('No regions provided')
+
+    # Get numbered sequence field
+
+    item1 = record1[record1_kwargs['numbered_seq_field']]
+    item2 = record2[record2_kwargs['numbered_seq_field']]
+
+    # Convert to JSON if required
+    if not isinstance(item1, collections.Mapping):
+        item1 = json.loads(item1)
+    if not isinstance(item2, collections.Mapping):
+        item2 = json.loads(item2)
 
     total_distance = 0
     for region_key in regions:
@@ -173,21 +221,33 @@ def measure_distance_lev1(item1: str, item2: str, **kwargs):
     return levenshtein(item1, item2)
 
 
-def measure_distance_lev2(item1: Any, item2: Any, columns: List[str]) -> int:
+def measure_distance_lev2(record1: Any, record2: Any,
+                          record1_kwargs: Dict, record2_kwargs: Dict,
+                          env_kwargs: Optional[Dict] = None) -> int:
     """
     Levenshtein with support for concatenation of multiple fields.
 
     Parameters
     ----------
-    item1 : Any
+    record1 : Any
         Dict-like record.
 
-    item2 : Any
+    record2 : Any
         Dict-like record.
 
-    columns : List[str]
-        List of string columns to concatenate
-        in item1 and item2.
+    record1_kwargs : Any
+        Dictionary with a 'columns' property containing
+        a sequence of string properties to concatenate.
+        e.g. ['cdr1_aa', 'cdr2_aa']
+
+    record2_kwargs : Any
+        Dictionary with a 'columns' property containing
+        a sequence of string properties to concatenate.
+        e.g. ['cdr1_aa', 'cdr2_aa']
+
+    env_kwargs : Any, optional
+        Environment-level arguments.
+        Not used, default is None.
 
     Returns
     -------
@@ -197,14 +257,13 @@ def measure_distance_lev2(item1: Any, item2: Any, columns: List[str]) -> int:
     """
 
     return levenshtein(
-        ''.join([item1[x] for x in columns]),
-        ''.join([item2[y] for y in columns])
+        ''.join([record1[x] for x in record1_kwargs['columns']]),
+        ''.join([record2[y] for y in record2_kwargs['columns']])
     )
 
 
 # %%
-def create_distance_matrix(records: pd.DataFrame, distance_function: Callable,
-                           measure_value: str = 'aa', **kwargs):
+def create_distance_matrix(records: pd.DataFrame, distance_function: Callable, record_kwargs: Dict, env_kwargs: Dict):
     """
     Compute square distance matrix for all pairs of records
 
@@ -215,9 +274,9 @@ def create_distance_matrix(records: pd.DataFrame, distance_function: Callable,
     :param distance_function: function that takes (a, b) and returns\
     a numeric distance
 
-    :param measure_value: record property to measure distance for
+    :param record_kwargs: record-level kwargs for the distance function
 
-    :param **kwargs: additional args required for the distance function
+    :param env_kwargs: environment-level kwargs for the distance function
 
     :returns: square DataFrame of distances
     """
@@ -233,13 +292,11 @@ def create_distance_matrix(records: pd.DataFrame, distance_function: Callable,
     key_pairs = list(itertools.combinations(keys, 2))
     for pair in tqdm(key_pairs, desc='Create distance matrix'):
         key1, key2 = pair
-        # record1 = records[key1]
-        # record2 = records[key2]
         record1 = records.loc[key1]
         record2 = records.loc[key2]
 
         dist = distance_function(
-            record1[measure_value], record2[measure_value], **kwargs)
+            record1, record2, record_kwargs, record_kwargs, env_kwargs)
         df_distances.at[key1, key2] = dist
         df_distances.at[key2, key1] = dist
 

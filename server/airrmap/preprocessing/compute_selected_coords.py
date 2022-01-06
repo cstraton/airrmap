@@ -10,7 +10,7 @@ from airrmap.application.config import AppConfig
 
 
 # %%
-def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: AppConfig = None):
+def get_coords(env_name: str, seq_list: List[Any], app_cfg: AppConfig = None):
     """
     Computes the coordinates for a small list of sequences on the fly.
 
@@ -28,9 +28,8 @@ def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: A
         The list of sequences to compute the sequences for.
         Note that these should match the sequences used for the anchors.
         e.g. If the anchors are CDR3, then CDR3 sequences should be provided.
-
-    convert_json : bool or int
-        See OASAdapterBase.process_single_record() for options.
+        These sequences will be mapped to a dictionary/record format using the
+        envconfig.application setting for the environment.
 
     app_cfg : AppConfig (optional)
         Application configuration to use, including the base path for the 
@@ -47,41 +46,37 @@ def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: A
     env_cfg = app_cfg.get_env_config(env_name)
     cfganc = env_cfg['anchor']
     cfgseq = env_cfg['sequence']
-    anchor_seq_field = cfganc['seq_field']
-    anchor_convert_json = cfganc['seq_field_is_json']
-    sequence_seq_field_is_json = False
+    cfgseq_markers = env_cfg['application']['seq_markers']
+    distance_measure_name = env_cfg['distance_measure']
+    distance_measure_env_kwargs = env_cfg['distance_measure_env_kwargs']
+    distance_measure_seq_kwargs = cfgseq_markers['distance_measure_record_kwargs']
+    distance_measure_anchor_kwargs = cfganc['distance_measure_record_kwargs']
+    seq_field_delim = cfgseq_markers['field_delim']
+    seq_field_mapping = cfgseq_markers['field_mapping']
     sequence_num_closest_anchors = cfgseq['num_closest_anchors']
-    distance_measure_name = cfganc['distance_measure']
-    distance_measure_kwargs = dict(regions=cfganc['regions'])
 
     # Load anchors
     fn_anchors = app_cfg.get_anchordb(env_name)
     prep_args = OASAdapterBase.prepare(
         fn=None,
         seq_row_start=0,  # not used
-        fn_anchors=fn_anchors,
-        anchor_seq_field=anchor_seq_field,
-        anchor_convert_json=anchor_convert_json
+        fn_anchors=fn_anchors
     )
     d_anchors: Dict[int, AnchorItem] = prep_args['anchors']
-
-    # Check anchors and sequences are same format
-    # (may be able to remove this in the future, added
-    #  to prevent accidentally providing the wrong format)
-    if anchor_convert_json != convert_json:
-        raise ValueError(
-            'Sequence format does not match that used for the anchors.')
 
     # Compute the sequence coordinates
     result_list = []
     for seq in seq_list:
         result = get_single_coords(
             seq=seq,
+            seq_field_delim=seq_field_delim,
+            seq_field_mapping=seq_field_mapping,
             anchors=d_anchors,
             num_closest_anchors=sequence_num_closest_anchors,
             distance_measure_name=distance_measure_name,
-            distance_measure_kwargs=distance_measure_kwargs,
-            convert_json=convert_json
+            distance_measure_env_kwargs=distance_measure_env_kwargs,
+            distance_measure_seq_kwargs=distance_measure_seq_kwargs,
+            distance_measure_anchor_kwargs=distance_measure_anchor_kwargs
         )
         result_list.append(result)
 
@@ -91,23 +86,28 @@ def get_coords(env_name: str, seq_list: List[Any], convert_json: Any, app_cfg: A
 # %%
 def get_single_coords(
         seq: Any,
+        seq_field_delim: str,
+        seq_field_mapping: List[str],
         anchors: Dict[int, AnchorItem],
         num_closest_anchors: int,
         distance_measure_name: str,
-        distance_measure_kwargs: Dict,
-        convert_json: Any) -> Dict[str, Any]:
+        distance_measure_env_kwargs: Dict,
+        distance_measure_seq_kwargs: Dict,
+        distance_measure_anchor_kwargs: Dict) -> Dict[str, Any]:
 
-    # Wrap the sequence in a dictionary
-    dummy_row = dict(seq=seq)
+    # Split the sequence value to fields
+    # and place in dictionary using field mapping from envconfig.
+    seq_split = seq.split(seq_field_delim)
+    seq_record = {k: v for k, v in zip(seq_field_mapping, seq_split)}
 
     result: Dict[str, Any] = OASAdapterBase.process_single_record(
-        row=dummy_row,
-        seq_field='seq',  # from above dummy_row, not related to field in data files
+        row=seq_record,
         anchors=anchors,
         num_closest_anchors=num_closest_anchors,
         distance_measure_name=distance_measure_name,
-        distance_measure_kwargs=distance_measure_kwargs,
-        convert_json=convert_json,
+        distance_measure_env_kwargs=distance_measure_env_kwargs,
+        distance_measure_seq_kwargs=distance_measure_seq_kwargs,
+        distance_measure_anchor_kwargs=distance_measure_anchor_kwargs,
         save_anchor_dists=False
     )
 
