@@ -24,6 +24,7 @@ anchor:
   build_image_folder: build/anchor/img
   build_db_file: anchor.db
   distance_measure_record_kwargs:
+    convert_json_single_quoted: False
     numbered_seq_field: aa_annotated
   method: MDS  # MDS, TSNE, PCA
   random_state: 2
@@ -38,6 +39,7 @@ sequence:
   anchor_dist_compression: zlib  # zlib or gzip
   anchor_dist_compression_level: 9 # 0-9 (highest).
   distance_measure_record_kwargs:
+    convert_json_single_quoted: False
     numbered_seq_field: aa_annotated
 
 # Application
@@ -51,6 +53,7 @@ application:
       field_mapping: # How UI-delimited input should be mapped to record fields for the distance function.
         - seq
       distance_measure_record_kwargs:  # Distance measure options 
+        convert_json_single_quoted: False
         numbered_seq_field: seq
   v_field: null
   d_field: null

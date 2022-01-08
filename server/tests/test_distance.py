@@ -16,6 +16,19 @@ class TestDistances(unittest.TestCase):
     def tearDown(self):
         pass
 
+    def test_euclidean(self):
+        """Test euclidean"""
+        self.assertEqual(
+            compute_euclidean(
+                x1=0,
+                y1=0,
+                x2=5,
+                y2=7
+            ),
+            ((5**2) + (7**2))**0.5,
+            'Correct distance should be returned (Pythagorean Theorem).'
+        )
+
     def test_measure_distance1(self):
         """Check correct distance reported for different lengths"""
 
@@ -62,6 +75,13 @@ class TestDistances(unittest.TestCase):
                 cdr1=dict(i1='A', i2='B'),
                 cdr2=dict(i1='C', i2='D'))
         )
+        item1_trailing_spaces = dict(
+            dict(
+                numbered_seq_field=dict(
+                    cdr1={'i1 ': 'A', 'i2 ': 'B'},
+                    cdr2={'i1 ': 'C', 'i2 ': 'D'})
+            )
+        )
         item2 = dict(
             numbered_seq_field=dict(
                 cdr1=dict(i1='A', i2='B', i3='Extra'),
@@ -81,10 +101,23 @@ class TestDistances(unittest.TestCase):
             numbered_seq_field=json.dumps(item3['numbered_seq_field'])
         )
 
+        item1_json_single_quotes = dict(
+            numbered_seq_field=item1_json['numbered_seq_field'].replace(
+                '"', "'")
+        )
+        item3_json_single_quotes = dict(
+            numbered_seq_field=item3_json['numbered_seq_field'].replace(
+                '"', "'")
+        )
+
         # Set up kwargs
         record_kwargs = dict(
+            convert_json_single_quoted=False,
             numbered_seq_field='numbered_seq_field'
         )
+        record_kwargs_single_quoted = record_kwargs.copy()
+        record_kwargs_single_quoted['convert_json_single_quoted'] = True
+
         env_kwargs = dict(
             regions=['cdr1', 'cdr2']
         )
@@ -99,6 +132,16 @@ class TestDistances(unittest.TestCase):
                 env_kwargs=env_kwargs
             ), 0, 'Same')
 
+        # Same, but with trailing spaces in residue numbers
+        self.assertEqual(
+            measure_distance3(
+                record1=item1_trailing_spaces,
+                record2=item1,
+                record1_kwargs=record_kwargs,
+                record2_kwargs=record_kwargs,
+                env_kwargs=env_kwargs
+            ), 0, 'Same with trailing spaces in residue keys')
+
         # Same number, different values
         self.assertEqual(
             measure_distance3(
@@ -109,7 +152,7 @@ class TestDistances(unittest.TestCase):
                 env_kwargs=env_kwargs
             ), 4, 'Different values')
 
-        # Same number, different values, JSON string (check conversion to dict)
+        # Same number, different values, double-quoted JSON string (check conversion to dict)
         self.assertEqual(
             measure_distance3(
                 record1=item1_json,
@@ -117,7 +160,17 @@ class TestDistances(unittest.TestCase):
                 record1_kwargs=record_kwargs,
                 record2_kwargs=record_kwargs,
                 env_kwargs=env_kwargs
-            ), 4, 'Different values (json)')
+            ), 4, 'Different values (double-quoted json)')
+
+        # Same number, different values, single-quoted JSON string
+        self.assertEqual(
+            measure_distance3(
+                record1=item1_json_single_quotes,
+                record2=item3_json_single_quotes,
+                record1_kwargs=record_kwargs_single_quoted,
+                record2_kwargs=record_kwargs_single_quoted,
+                env_kwargs=env_kwargs
+            ), 4, 'Different values (single-quoted json)')
 
         # +1 Extra
         self.assertEqual(

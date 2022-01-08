@@ -2,6 +2,7 @@
 # File paths should be relative to base folder.
 
 # Version history (Remember to update 'version' property below)
+# 1.28 - Added convert_json_single_quoted property for measure_distance3
 # 1.27 - Remove build_db_files
 # 1.26 - Separate distance measure env-level and record-level kwargs.
 # 1.25 - Remove anchor.seq_field and sequence.seq_field (now uses distance_measure_options)
@@ -32,7 +33,7 @@
 # 1.01 - Add anchor.n_neighbors for UMAP (optional)
 # 1.00 - Initial
 
-version: 1.27
+version: 1.28
 
 # Header
 title: Environment name.
@@ -57,6 +58,7 @@ anchor:
   seq_id_field: 'name' # Unique anchor identifier
   group_field: 'v_subgroup' # Used for distortion plots (e.g. colour coding) during preprocessing. Use null if not required.
   distance_measure_record_kwargs: # Record-level kwargs for the selected 'distance_measure'.
+    convert_json_single_quoted: False # True to convert single-quoted JSON to double-quoted for loading.
     numbered_seq_field: aa_annotated
   method: MDS  # MDS, TSNE, PCA, UMAP
   random_state: 2
@@ -71,6 +73,7 @@ sequence:
   seq_id_field: null # Field to use as seq ID - must be integers. Use null to auto-generate.
   seq_row_start: 3 # Row that sequence records start.
   distance_measure_record_kwargs: # Record-level kwargs for the selected 'distance_measure'. Used for MLAT / computation of seq coordinates.
+    convert_json_single_quoted: True # True to convert single-quoted JSON to double-quoted for loading.
     numbered_seq_field: ANARCI_numbering
   num_closest_anchors: 0 # 0 all.
   save_anchor_dists: False # True to save binary-encoded anchor distances in the output records file (smaller file size and slightly faster processing if excluded).
@@ -94,6 +97,7 @@ application:
     field_mapping: # How UI delimited input should be mapped to record fields for the distance function.
       - seq
     distance_measure_record_kwargs:  # Record-level kwargs for the selected 'distance_measure'. For sequences entered in the UI.
+      convert_json_single_quoted: False # True to convert single-quoted JSON to double-quoted for loading.
       numbered_seq_field: seq
 
   seq_logos: # Gapped sequences for sequence logos

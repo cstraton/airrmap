@@ -9,16 +9,16 @@ import itertools
 import random
 import collections
 import json
+from numba import njit
 from polyleven import levenshtein
-
 from tqdm import tqdm
 from sklearn import manifold
 from sklearn.decomposition import PCA
-from scipy.spatial import distance as scipydist
 from scipy.spatial.distance import pdist, squareform
 from typing import Callable, Dict, Optional, Any
 
 
+@njit
 def compute_euclidean(x1, y1, x2, y2):
     """
     Euclidean distance.
@@ -132,7 +132,9 @@ def measure_distance3(record1: Any, record2: Any, record1_kwargs: Dict, record2_
     """
     Measure distance 3.
 
-    Compute the distance between two
+    Note: Keys and values will be trimmed and
+          comparison will be case insensitive.
+    Computes the distance between two
     annotated sequences. +1 for each residue different.
     CARE!: +1 distance will be added to any gaps - consider this if using different
     lengths / partials, or if the annotated sequence contains '.' items.
@@ -150,12 +152,18 @@ def measure_distance3(record1: Any, record2: Any, record1_kwargs: Dict, record2_
         that points to the property in record1 containing
         a Dict-like or JSON-annotated sequence.
         e.g.: record {} -> region ('cdrh2') -> residue number (imgt '26').
+        Should contain 'convert_json_single_quoted' property, where True
+        replaces single-quoted JSON strings, so they can be loaded
+        by json.loads() (assumes no values have single quotes in).
 
     record2_kwargs : Dict
         Should contain a 'numbered_seq_field' property
         that points to the property in record2 containing
         a Dict-like or JSON-annotated sequence.
         e.g.: record {} -> region ('cdrh2') -> residue number (imgt '26').
+        Should contain 'convert_json_single_quoted' property, where True
+        replaces single-quoted JSON strings, so they can be loaded
+        by json.loads() (assumes no values have single quotes in).
 
     env_kwargs : Dict
         Should contain a 'regions' property; a List containing
@@ -179,20 +187,38 @@ def measure_distance3(record1: Any, record2: Any, record1_kwargs: Dict, record2_
         raise Exception('No regions provided')
 
     # Get numbered sequence field
-
     item1 = record1[record1_kwargs['numbered_seq_field']]
     item2 = record2[record2_kwargs['numbered_seq_field']]
 
-    # Convert to JSON if required
+    # Convert single quotes if required
+    # NOTE: assumes no values with single quotes
+    # ast.literal_eval() is too slow, so convert and use json.loads.
+    if record1_kwargs['convert_json_single_quoted'] == True:
+        item1 = item1.replace("'", '"')
+    if record2_kwargs['convert_json_single_quoted'] == True:
+        item2 = item2.replace("'", '"')
+
+    # Load JSON
     if not isinstance(item1, collections.Mapping):
         item1 = json.loads(item1)
     if not isinstance(item2, collections.Mapping):
         item2 = json.loads(item2)
 
+    # Perform distance measurement
     total_distance = 0
     for region_key in regions:
         region1 = item1[region_key]
         region2 = item2[region_key]
+
+        # Trim and make case insensitve
+        # OAS has trailing space for annotated residue keys,
+        # which can cause issues during comparison to anchors.
+        # (Jan 2022).
+        region1 = {k.strip().upper(): v.strip().upper()
+                   for k, v in region1.items()}
+        region2 = {k.strip().upper(): v.strip().upper()
+                   for k, v in region2.items()}
+
         set1 = set(region1.keys())
         set2 = set(region2.keys())
 
@@ -201,7 +227,7 @@ def measure_distance3(record1: Any, record2: Any, record1_kwargs: Dict, record2_
         setintersect = set1.intersection(set2)
         uniondiff = 0
         for k in setintersect:
-            if region1[k] != region2[k]:
+            if region1[k.strip()] != region2[k.strip()]:
                 uniondiff += 1
 
         # +1 for each key not in both
