@@ -22,7 +22,7 @@ from airrmap.preprocessing.oas_adapter_base import OASAdapterBase, AnchorItem
 # %% OASAdpaterJSON Class
 
 
-class OASAdapterJSON(OASAdapterBase):
+class OASAdapterCSV(OASAdapterBase):
 
     @staticmethod
     def process_meta(file_id: int,
@@ -41,7 +41,7 @@ class OASAdapterJSON(OASAdapterBase):
 
         # Get additional file properties
         # super(a, a) required for static method
-        extra_properties = super(OASAdapterJSON, OASAdapterJSON).get_extra_file_meta(
+        extra_properties = super(OASAdapterCSV, OASAdapterCSV).get_extra_file_meta(
             file_id=file_id,
             fn=fn,
             record_count=record_count)
@@ -53,7 +53,7 @@ class OASAdapterJSON(OASAdapterBase):
 
         # Convert to long DataFrame
         # # super(a, a) required for static method
-        df_header = super(OASAdapterJSON, OASAdapterJSON).header_to_df(
+        df_header = super(OASAdapterCSV, OASAdapterCSV).header_to_df(
             header=header_dict,
             extra=extra_properties
         )
@@ -172,7 +172,7 @@ class OASAdapterJSON(OASAdapterBase):
         FILE_ID_FIELD = 'sys_file_id'
         SEQ_ID_FIELD = 'seq_id'
         base: OASAdapterBase = super(
-            OASAdapterJSON, OASAdapterJSON)      # type: ignore
+            OASAdapterCSV, OASAdapterCSV)      # type: ignore
 
         # Initialize Pandarallel
         if nb_workers is not None:
