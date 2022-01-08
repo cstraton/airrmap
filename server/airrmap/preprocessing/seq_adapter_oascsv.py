@@ -19,7 +19,7 @@ import airrmap.preprocessing.pointid as pointid
 from airrmap.preprocessing.seq_adapter_base import SeqAdapterBase, AnchorItem
 
 
-# %% 
+# %%
 
 
 class SeqAdapterOASCSV(SeqAdapterBase):
@@ -217,7 +217,8 @@ class SeqAdapterOASCSV(SeqAdapterBase):
             header=1,
             sep=',',
             error_bad_lines=True,
-            chunksize=chunk_size
+            chunksize=chunk_size,
+            dtype=SeqAdapterOASCSV.get_csv_dtypes()
         ) as reader:
 
             pqwriter: pq.ParquetWriter = None
@@ -302,3 +303,137 @@ class SeqAdapterOASCSV(SeqAdapterBase):
             pbar.set_description_str(
                 desc='Finished writing to db.', refresh=True)
             pbar.close()
+
+    @staticmethod
+    def get_csv_dtypes() -> Dict:
+        """
+        Return explicit dtypes for each column in an OAS csv file.
+
+        Added as Pandas raises a mixed-type error if inferred data types
+        vary between read chunks.
+        See https://stackoverflow.com/questions/24251219/pandas-read-csv-low-memory-and-dtype-options.
+
+        Returns
+        -------
+        Dict
+            The dtype mappings.
+        """
+
+        # string[pyarrow] is generally more efficient, available in Pandas >= 1.3.
+        # https://pythonspeed.com/articles/pandas-string-dtype-memory/
+
+        # All ints are specified as float32 as some ints in the OAS
+        # csv files are floats (e.g. "236.0") which causes an error if trying to convert to uint16:
+        # e.g. "ValueError: cannot safely convert passed user dtype of uint16
+        #      for float64 dtyped data in column 17".
+
+        # Also float16 is not supported in pyarrow / Parquet:
+        # "pyarrow.lib.ArrowNotImplementedError: Unhandled type for Arrow to Parquet schema conversion: halffloat"
+        # See: https://github.com/apache/arrow/issues/2691
+
+        # TODO: Look at use of use_byte_stream_split (better compression for floats).
+        # REF: https://arrow.apache.org/docs/python/generated/pyarrow.parquet.write_table.html
+
+        # Column mappings can be added as required - only columns that
+        # match will be taken into account by pd.read_csv(dtype={...}).
+        # Non-matches will be ignored.
+        dtypes = {
+            'sequence': 'string[pyarrow]',
+            'locus': 'string[pyarrow]',
+            'stop_codon': 'string[pyarrow]',
+            'vj_in_frame': 'string[pyarrow]',
+            'v_frameshift': 'string[pyarrow]',
+            'productive': 'string[pyarrow]',
+            'rev_comp': 'string[pyarrow]',
+            'complete_vdj': 'string[pyarrow]',
+            'v_call': 'string[pyarrow]',
+            'd_call': 'string[pyarrow]',
+            'j_call': 'string[pyarrow]',
+            'sequence_alignment': 'string[pyarrow]',
+            'germline_alignment': 'string[pyarrow]',
+            'sequence_alignment_aa': 'string[pyarrow]',
+            'germline_alignment_aa': 'string[pyarrow]',
+            'v_alignment_start': 'float32',
+            'v_alignment_end': 'float32',
+            'd_alignment_start': 'float32',
+            'd_alignment_end': 'float32',
+            'j_alignment_start': 'float32',
+            'j_alignment_end': 'float32',
+            'v_sequence_alignment': 'string[pyarrow]',
+            'v_sequence_alignment_aa': 'string[pyarrow]',
+            'v_germline_alignment': 'string[pyarrow]',
+            'v_germline_alignment_aa': 'string[pyarrow]',
+            'd_sequence_alignment': 'string[pyarrow]',
+            'd_sequence_alignment_aa': 'string[pyarrow]',
+            'd_germline_alignment': 'string[pyarrow]',
+            'd_germline_alignment_aa': 'string[pyarrow]',
+            'j_sequence_alignment': 'string[pyarrow]',
+            'j_sequence_alignment_aa': 'string[pyarrow]',
+            'j_germline_alignment': 'string[pyarrow]',
+            'j_germline_alignment_aa': 'string[pyarrow]',
+            'fwr1': 'string[pyarrow]',
+            'fwr1_aa': 'string[pyarrow]',
+            'cdr1': 'string[pyarrow]',
+            'cdr1_aa': 'string[pyarrow]',
+            'fwr2': 'string[pyarrow]',
+            'fwr2_aa': 'string[pyarrow]',
+            'cdr2': 'string[pyarrow]',
+            'cdr2_aa': 'string[pyarrow]',
+            'fwr3': 'string[pyarrow]',
+            'fwr3_aa': 'string[pyarrow]',
+            'fwr4': 'string[pyarrow]',
+            'fwr4_aa': 'string[pyarrow]',
+            'cdr3': 'string[pyarrow]',
+            'cdr3_aa': 'string[pyarrow]',
+            'junction': 'string[pyarrow]',
+            'junction_length': 'float32',
+            'junction_aa': 'string[pyarrow]',
+            'junction_aa_length': 'float32',
+            'v_score': 'float32',
+            'd_score': 'float32',
+            'j_score': 'float32',
+            'v_cigar': 'string[pyarrow]',
+            'd_cigar': 'string[pyarrow]',
+            'j_cigar': 'string[pyarrow]',
+            'v_support': 'float32',
+            'd_support': 'float32',
+            'j_support': 'float32',
+            'v_identity': 'float32',
+            'd_identity': 'float32',
+            'j_identity': 'float32',
+            'v_sequence_start': 'float32',
+            'v_sequence_end': 'float32',
+            'v_germline_start': 'float32',
+            'v_germline_end': 'float32',
+            'd_sequence_start': 'float32',
+            'd_sequence_end': 'float32',
+            'd_germline_start': 'float32',
+            'd_germline_end': 'float32',
+            'j_sequence_start': 'float32',
+            'j_sequence_end': 'float32',
+            'j_germline_start': 'float32',
+            'j_germline_end': 'float32',
+            'fwr1_start': 'float32',
+            'fwr1_end': 'float32',
+            'cdr1_start': 'float32',
+            'cdr1_end': 'float32',
+            'fwr2_start': 'float32',
+            'fwr2_end': 'float32',
+            'cdr2_start': 'float32',
+            'cdr2_end': 'float32',
+            'fwr3_start': 'float32',
+            'fwr3_end': 'float32',
+            'fwr4_start': 'float32',
+            'fwr4_end': 'float32',
+            'cdr3_start': 'float32',
+            'cdr3_end': 'float32',
+            'np1': 'string[pyarrow]',
+            'np1_length': 'float32',
+            'np2': 'string[pyarrow]',
+            'np2_length': 'float32',
+            'c_region': 'string[pyarrow]',
+            'Redundancy': 'float32',
+            'ANARCI_numbering': 'string[pyarrow]',
+            'ANARCI_status': 'string[pyarrow]',
+        }
+        return dtypes
