@@ -87,8 +87,8 @@ endif
 	mkdir -p "$($(DATA_FOLDER_VAR))"
 
 # Copy files to data folder
-	@cp ./data/config.yaml "$($(DATA_FOLDER_VAR))"
-	@echo Copied config.yaml to "$($(DATA_FOLDER_VAR))"
+	@cp ./data/appconfig.yaml "$($(DATA_FOLDER_VAR))"
+	@echo Copied appconfig.yaml to "$($(DATA_FOLDER_VAR))"
 	@cp ./data/envconfig.yaml "$($(DATA_FOLDER_VAR))"
 	@echo Copied envconfig.yaml to "$($(DATA_FOLDER_VAR))"
 	@cp ./data/envinit.sh "$($(DATA_FOLDER_VAR))"
