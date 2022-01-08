@@ -28,7 +28,6 @@ class OASAdapterJSON(OASAdapterBase):
     def process_meta(file_id: int,
                      fn,
                      fn_out,
-                     openfunc: Callable,
                      record_count: int, fn_anchors_sha1: str,
                      anchor_dist_compression,
                      anchor_dist_compression_level):
@@ -36,9 +35,9 @@ class OASAdapterJSON(OASAdapterBase):
         FILE_ID_FIELD = 'sys_file_id'
 
         # Open and read meta
-        with openfunc(fn) as f:
-            header_json = next(f)
-            header_dict = json.loads(header_json)
+        # REF: http://opig.stats.ox.ac.uk/webapps/oas/documentation
+        header_meta = ','.join(pd.read_csv(fn, nrows=0).columns)
+        header_dict = json.loads(header_meta)
 
         # Get additional file properties
         # super(a, a) required for static method
@@ -72,7 +71,6 @@ class OASAdapterJSON(OASAdapterBase):
     def process_records(file_id: int,
                         fn,
                         fn_out,
-                        openfunc: Callable,
                         record_count: int,
                         seq_id_field: str,
                         anchors: Dict[int, AnchorItem],
@@ -108,11 +106,6 @@ class OASAdapterJSON(OASAdapterBase):
 
         fn_out : str or file-like
             The file to save the processed data to.
-
-        openfunc : Callable
-            The function to open the data unit with.
-            Should gzip.open() if a gzipped file, otherwise
-            the built-in open() function.
 
         record_count : int
             Number of sequences/records in the data (excluding headers)
@@ -152,7 +145,7 @@ class OASAdapterJSON(OASAdapterBase):
         chunk_size : int, optional
             Size of DataFrame chunks to process in parallel, by default 5000.
             Larger chunk sizes will consume more memory and result in less
-            frequent progress updates, but may result in 
+            frequent progress updates, but may result in
             better performance.
 
         save_anchor_dists : bool, optional
@@ -180,11 +173,6 @@ class OASAdapterJSON(OASAdapterBase):
         SEQ_ID_FIELD = 'seq_id'
         base: OASAdapterBase = super(
             OASAdapterJSON, OASAdapterJSON)      # type: ignore
-
-        # Whether json or the newer csv format
-        is_miairr_format = fn.endswith('.csv.gz') or fn.endswith('.csv')
-
-        import ast
 
         # Initialize Pandarallel
         if nb_workers is not None:
@@ -216,103 +204,95 @@ class OASAdapterJSON(OASAdapterBase):
 
         # Open the file
         processed_count = 0
-        with openfunc(fn) as f:
 
-            # Init progress bar
-            pbar = tqdm(
-                total=record_count, desc="Writing data unit to db...", position=0, leave=True)
+        # Init progress bar
+        pbar = tqdm(
+            total=record_count, desc="Writing data unit to db...", position=0, leave=True)
 
-            # Skip meta row
-            next(f)
+        # Start reading in chunks...
+        # OAS reading files: http://opig.stats.ox.ac.uk/webapps/oas/documentation
+        with pd.read_csv(
+            fn,
+            index_col=None,
+            header=1,
+            sep=',',
+            error_bad_lines=True,
+            chunksize=chunk_size
+        ) as reader:
 
-            # Start reading in chunks...
-            with pd.read_json(f,
-                              orient='records',
-                              lines=True,
-                              chunksize=chunk_size) \
-                if not is_miairr_format \
-                else pd.read_csv(
-                f,
-                index_col=None,
-                header='infer',
-                sep=',',
-                error_bad_lines=True,
-                chunksize=chunk_size
-            ) as reader:
+            pqwriter: pq.ParquetWriter = None
+            for i_chunk, df_chunk in enumerate(reader):
 
-                pqwriter: pq.ParquetWriter = None
-                for i_chunk, df_chunk in enumerate(reader):
+                # Stop if required
+                if stop_after_n_chunks > 0 and i_chunk >= stop_after_n_chunks:
+                    break
 
-                    # Stop if required
-                    if stop_after_n_chunks > 0 and i_chunk >= stop_after_n_chunks:
-                        break
+                # Update status
+                chunk_size = len(df_chunk.index)
+                pbar.update(chunk_size)
 
-                    # Update status
-                    chunk_size = len(df_chunk.index)
-                    pbar.update(chunk_size)
+                # Transforms
+                # TODO: Move to OAS_adapter_base?
+                df_chunk = df_chunk.convert_dtypes()
 
-                    # Transforms
-                    # TODO: Move to OAS_adapter_base?
-                    df_chunk = df_chunk.convert_dtypes()
+                # Generate sequential ID (0-based) or use existing field
+                if seq_id_field is None:
+                    df_chunk.insert(0, SEQ_ID_FIELD, range(
+                        processed_count, processed_count + chunk_size)),
+                else:
+                    df_chunk.insert(0, SEQ_ID_FIELD,
+                                    df_chunk[seq_id_field])
 
-                    # Generate sequential ID (0-based) or use existing field
-                    if seq_id_field is None:
-                        df_chunk.insert(0, SEQ_ID_FIELD, range(
-                            processed_count, processed_count + chunk_size)),
-                    else:
-                        df_chunk.insert(0, SEQ_ID_FIELD,
-                                        df_chunk[seq_id_field])
+                # Insert file id
+                df_chunk.insert(0, FILE_ID_FIELD, file_id)
 
-                    # Insert file id
-                    df_chunk.insert(0, FILE_ID_FIELD, file_id)
+                # Create point ID, unique across environment.
+                # Combines file_id and the file-level seq_id.
+                # (May change due to file_id, don't use outside of system)
+                df_chunk.insert(
+                    0,
+                    POINT_ID_FIELD,
+                    df_chunk.apply(
+                        lambda row: pointid.create_point_id(
+                            row[FILE_ID_FIELD],
+                            row[SEQ_ID_FIELD]
+                        ),
+                        axis=1
+                    )
+                )
 
-                    # Create point ID, unique across environment.
-                    # Combines file_id and the file-level seq_id.
-                    # (May change due to file_id, don't use outside of system)
-                    df_chunk.insert(
-                        0,
-                        POINT_ID_FIELD,
-                        df_chunk.apply(
-                            lambda row: pointid.create_point_id(
-                                row[FILE_ID_FIELD],
-                                row[SEQ_ID_FIELD]
-                            ),
-                            axis=1
-                        )
+                # Compute distances and coordinates
+                # df_computed will be just the computed columns
+                # df_computed = df_chunk.apply(
+                df_computed = df_chunk.parallel_apply(
+                    base.process_single_record,
+                    axis='columns',
+                    result_type='expand',
+                    **process_chunk_args
+                )
+
+                # Add the computed columns
+                df_chunk = pd.concat(
+                    [df_chunk, df_computed],
+                    axis='columns'
+                )
+
+                # Convert to PyArrow table
+                pqtable_chunk = pa.Table.from_pandas(df_chunk)
+
+                # Create Parquet file
+                if i_chunk == 0:
+                    pqwriter = pq.ParquetWriter(
+                        fn_out,
+                        pqtable_chunk.schema,
+                        compression=compression
                     )
 
-                    # Compute distances and coordinates
-                    # df_computed will be just the computed columns
-                    # df_computed = df_chunk.apply(
-                    df_computed = df_chunk.parallel_apply(
-                        base.process_single_record,
-                        axis='columns',
-                        result_type='expand',
-                        **process_chunk_args
-                    )
+                # Append chunk to Parquet file
+                pqwriter.write_table(pqtable_chunk)
 
-                    # Add the computed columns
-                    df_chunk = pd.concat(
-                        [df_chunk, df_computed],
-                        axis='columns'
-                    )
-
-                    # Convert to PyArrow table
-                    pqtable_chunk = pa.Table.from_pandas(df_chunk)
-
-                    # Create Parquet file
-                    if i_chunk == 0:
-                        pqwriter = pq.ParquetWriter(
-                            fn_out,
-                            pqtable_chunk.schema,
-                            compression=compression
-                        )
-
-                    # Append chunk to Parquet file
-                    pqwriter.write_table(pqtable_chunk)
-
-                    # Keep count
-                    processed_count += chunk_size
+                # Keep count
+                processed_count += chunk_size
 
             # Close the parquet writer
             if pqwriter:

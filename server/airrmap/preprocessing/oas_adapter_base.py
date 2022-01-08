@@ -552,8 +552,6 @@ class OASAdapterBase:
             record_count: Number of records in the data unit file, or
                 zero if 'fn' is None.
 
-            openfunc: The open function to read the file with (e.g. gzip.open)
-
             anchors: Dictionary of AnchorItems loaded from the anchor db.
                 Key=anchor_id, Value=AnchorItem().
 
@@ -584,7 +582,6 @@ class OASAdapterBase:
         # Return config
         return dict(
             record_count=record_count,
-            openfunc=openfunc,
             anchors=anchors,
             anchors_file_sha1=anchors_file_sha1
         )
