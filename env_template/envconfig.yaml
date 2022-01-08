@@ -2,6 +2,7 @@
 # File paths should be relative to base folder.
 
 # Version history (Remember to update 'version' property below)
+# 1.27 - Remove build_db_files
 # 1.26 - Separate distance measure env-level and record-level kwargs.
 # 1.25 - Remove anchor.seq_field and sequence.seq_field (now uses distance_measure_options)
 # 1.24 - Add application.seq_markers
@@ -31,7 +32,7 @@
 # 1.01 - Add anchor.n_neighbors for UMAP (optional)
 # 1.00 - Initial
 
-version: 1.26
+version: 1.27
 
 # Header
 title: Environment name.
@@ -67,7 +68,6 @@ sequence:
   src_file_pattern: "*.csv.gz" # Wrap with quotes.
   build_folder: build/seq
   build_image_folder: build/seq/img
-  build_db_files: \*.db # Remove.
   seq_id_field: null # Field to use as seq ID - must be integers. Use null to auto-generate.
   seq_row_start: 3 # Row that sequence records start.
   distance_measure_record_kwargs: # Record-level kwargs for the selected 'distance_measure'. Used for MLAT / computation of seq coordinates.

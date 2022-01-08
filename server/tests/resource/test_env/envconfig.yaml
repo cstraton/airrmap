@@ -34,7 +34,6 @@ sequence:
   src_file_pattern: "*.json" # Wrap with quotes
   build_folder: build/seq
   build_image_folder: build/seq/img
-  build_db_files: \*.db # Remove
   num_closest_anchors: 0 # 0 all
   anchor_dist_compression: zlib  # zlib or gzip
   anchor_dist_compression_level: 9 # 0-9 (highest).
