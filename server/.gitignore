@@ -21,7 +21,6 @@ data/*
 
 # All csv files (except examples)
 *.csv
-!util/oas_doi_lookup.csv
 !data/example/oas_csv_example.csv
 
 ### setup.py ###

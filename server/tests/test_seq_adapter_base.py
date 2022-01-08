@@ -1,4 +1,4 @@
-# %% Test OASAdapterBase (partial, WIP)
+# %% Test SeqAdapterBase (partial, WIP)
 
 import pandas as pd
 import construct
@@ -6,11 +6,11 @@ import unittest
 
 import airrmap.preprocessing.distance as distance
 from collections import OrderedDict
-from airrmap.preprocessing.oas_adapter_base import OASAdapterBase, AnchorItem
+from airrmap.preprocessing.seq_adapter_base import SeqAdapterBase, AnchorItem
 
 
 
-class TestOASAdapterBase(unittest.TestCase):
+class TestSeqAdapterBase(unittest.TestCase):
 
     def setUp(self):  # Note uppercase U
         self.num_items = 329
@@ -20,7 +20,7 @@ class TestOASAdapterBase(unittest.TestCase):
         pass
 
     def test_anchor_dist_codec(self):
-        codec = OASAdapterBase.anchor_dist_codec(self.num_items)
+        codec = SeqAdapterBase.anchor_dist_codec(self.num_items)
         self.assertIsInstance(codec, construct.Struct)
 
     def test_anchor_dist_encode(self):
@@ -29,8 +29,8 @@ class TestOASAdapterBase(unittest.TestCase):
         anchor_dists_d = OrderedDict(
             {k: v for k, v in zip(anchor_ids, anchor_dists)})
 
-        codec = OASAdapterBase.anchor_dist_codec(self.num_items)
-        result = OASAdapterBase.anchor_dist_encode(anchor_dists_d,
+        codec = SeqAdapterBase.anchor_dist_codec(self.num_items)
+        result = SeqAdapterBase.anchor_dist_encode(anchor_dists_d,
                                                    codec, 'zlib', 9)
         self.assertIsInstance(result, bytes)
 
@@ -39,10 +39,10 @@ class TestOASAdapterBase(unittest.TestCase):
         anchor_dists = tuple(range(self.num_items))
         anchor_dists_d = OrderedDict(
             {k: v for k, v in zip(anchor_ids, anchor_dists)})
-        codec = OASAdapterBase.anchor_dist_codec(self.num_items)
-        encoded = OASAdapterBase.anchor_dist_encode(anchor_dists_d,
+        codec = SeqAdapterBase.anchor_dist_codec(self.num_items)
+        encoded = SeqAdapterBase.anchor_dist_encode(anchor_dists_d,
                                                     codec, 'zlib', 9)
-        decoded = OASAdapterBase.anchor_dist_decode(encoded, codec, 'zlib')
+        decoded = SeqAdapterBase.anchor_dist_decode(encoded, codec, 'zlib')
 
         self.assertIsInstance(decoded, construct.Container)
         anchor_dists = decoded['anchor_dists']
@@ -54,11 +54,11 @@ class TestOASAdapterBase(unittest.TestCase):
         anchor_dists = tuple(range(self.num_items))
         anchor_dists_d = OrderedDict(
             {k: v for k, v in zip(anchor_ids, anchor_dists)})
-        encoder = OASAdapterBase.anchor_dist_codec(self.num_items)
-        decoder = OASAdapterBase.anchor_dist_codec(self.num_items + 888)
-        encoded_bytes = OASAdapterBase.anchor_dist_encode(
+        encoder = SeqAdapterBase.anchor_dist_codec(self.num_items)
+        decoder = SeqAdapterBase.anchor_dist_codec(self.num_items + 888)
+        encoded_bytes = SeqAdapterBase.anchor_dist_encode(
             anchor_dists_d, encoder)
-        self.assertRaises(construct.core.StreamError, OASAdapterBase.anchor_dist_decode,
+        self.assertRaises(construct.core.StreamError, SeqAdapterBase.anchor_dist_decode,
                           encoded_bytes, decoder)
 
     def test_get_distances(self):
@@ -71,7 +71,7 @@ class TestOASAdapterBase(unittest.TestCase):
         env_kwargs = dict()
 
         distance_func = distance.measure_distance_lev2
-        distances_d = OASAdapterBase.get_distances(
+        distances_d = SeqAdapterBase.get_distances(
             item1=item1, 
             items=items, 
             measure_function=distance_func, 
@@ -98,7 +98,7 @@ class TestOASAdapterBase(unittest.TestCase):
         num_closest_anchors = 2
 
         # Run
-        record = OASAdapterBase.compute_sequence_coords(
+        record = SeqAdapterBase.compute_sequence_coords(
             anchor_dists=anchor_dists,
             anchors=anchors,
             num_closest_anchors=num_closest_anchors

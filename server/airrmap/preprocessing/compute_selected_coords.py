@@ -5,7 +5,7 @@
 # %% Imports
 import json
 from typing import Any, Dict, List
-from airrmap.preprocessing.oas_adapter_base import OASAdapterBase, AnchorItem
+from airrmap.preprocessing.seq_adapter_base import SeqAdapterBase, AnchorItem
 from airrmap.application.config import AppConfig
 
 
@@ -38,7 +38,7 @@ def get_coords(env_name: str, seq_list: List[Any], app_cfg: AppConfig = None):
     Returns
     -------
     List
-        See OASAdapterBase.process_single_record().
+        See SeqAdapterBase.process_single_record().
     """
 
     # Read environment configuration
@@ -57,7 +57,7 @@ def get_coords(env_name: str, seq_list: List[Any], app_cfg: AppConfig = None):
 
     # Load anchors
     fn_anchors = app_cfg.get_anchordb(env_name)
-    prep_args = OASAdapterBase.prepare(
+    prep_args = SeqAdapterBase.prepare(
         fn=None,
         seq_row_start=0,  # not used
         fn_anchors=fn_anchors
@@ -100,7 +100,7 @@ def get_single_coords(
     seq_split = seq.split(seq_field_delim)
     seq_record = {k: v for k, v in zip(seq_field_mapping, seq_split)}
 
-    result: Dict[str, Any] = OASAdapterBase.process_single_record(
+    result: Dict[str, Any] = SeqAdapterBase.process_single_record(
         row=seq_record,
         anchors=anchors,
         num_closest_anchors=num_closest_anchors,

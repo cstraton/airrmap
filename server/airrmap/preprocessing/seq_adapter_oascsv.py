@@ -1,6 +1,6 @@
-# JSON/CSV Adapter for OAS datasets.
+# Adapter for OAS datasets.
 # Calls multiple functions in the base
-# class OASAdapterBase.
+# class SeqAdapterBase.
 # Primarily used to compute the 2D embeddings
 # for the study sequences.
 
@@ -16,13 +16,13 @@ from typing import Any, Dict, List, Callable
 from pandarallel import pandarallel
 
 import airrmap.preprocessing.pointid as pointid
-from airrmap.preprocessing.oas_adapter_base import OASAdapterBase, AnchorItem
+from airrmap.preprocessing.seq_adapter_base import SeqAdapterBase, AnchorItem
 
 
-# %% OASAdpaterJSON Class
+# %% 
 
 
-class OASAdapterCSV(OASAdapterBase):
+class SeqAdapterOASCSV(SeqAdapterBase):
 
     @staticmethod
     def process_meta(file_id: int,
@@ -41,7 +41,7 @@ class OASAdapterCSV(OASAdapterBase):
 
         # Get additional file properties
         # super(a, a) required for static method
-        extra_properties = super(OASAdapterCSV, OASAdapterCSV).get_extra_file_meta(
+        extra_properties = super(SeqAdapterOASCSV, SeqAdapterOASCSV).get_extra_file_meta(
             file_id=file_id,
             fn=fn,
             record_count=record_count)
@@ -53,7 +53,7 @@ class OASAdapterCSV(OASAdapterBase):
 
         # Convert to long DataFrame
         # # super(a, a) required for static method
-        df_header = super(OASAdapterCSV, OASAdapterCSV).header_to_df(
+        df_header = super(SeqAdapterOASCSV, SeqAdapterOASCSV).header_to_df(
             header=header_dict,
             extra=extra_properties
         )
@@ -171,8 +171,8 @@ class OASAdapterCSV(OASAdapterBase):
         POINT_ID_FIELD = 'sys_point_id'
         FILE_ID_FIELD = 'sys_file_id'
         SEQ_ID_FIELD = 'seq_id'
-        base: OASAdapterBase = super(
-            OASAdapterCSV, OASAdapterCSV)      # type: ignore
+        base: SeqAdapterBase = super(
+            SeqAdapterOASCSV, SeqAdapterOASCSV)      # type: ignore
 
         # Initialize Pandarallel
         if nb_workers is not None:
@@ -232,7 +232,7 @@ class OASAdapterCSV(OASAdapterBase):
                 pbar.update(chunk_size)
 
                 # Transforms
-                # TODO: Move to OAS_adapter_base?
+                # TODO: Move to seq_adapter_base?
                 df_chunk = df_chunk.convert_dtypes()
 
                 # Generate sequential ID (0-based) or use existing field

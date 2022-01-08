@@ -14,8 +14,8 @@ import os
 import json
 import glob
 import argparse
-from airrmap.preprocessing.oas_adapter_json import OASAdapterJSON
-from airrmap.preprocessing.oas_adapter_base import OASAdapterBase
+from airrmap.preprocessing.seq_adapter_oascsv import SeqAdapterOASCSV
+from airrmap.preprocessing.seq_adapter_base import SeqAdapterBase
 
 from tqdm import tqdm
 from typing import Any, Dict, List
@@ -151,7 +151,7 @@ def main(argv):
         # Prepare some of the args
         # such as record count
         log.info('Preparing initial arguments...')
-        prep_args: Dict = OASAdapterBase.prepare(
+        prep_args: Dict = SeqAdapterBase.prepare(
             fn=fn_data_unit,
             seq_row_start=seq_row_start,
             fn_anchors=fn_anchor_db
@@ -163,7 +163,7 @@ def main(argv):
 
         # Write the meta file
         log.info('Start writing meta file...')
-        OASAdapterJSON.process_meta(
+        SeqAdapterOASCSV.process_meta(
             file_id=file_id,
             fn=fn_data_unit,
             fn_out=fn_data_unit_meta,
@@ -177,7 +177,7 @@ def main(argv):
         # Compute distances and coordinates, and
         # write the records file.
         log.info('Start computing distances and coordinates...')
-        OASAdapterJSON.process_records(
+        SeqAdapterOASCSV.process_records(
             file_id=file_id,
             fn=fn_data_unit,
             fn_out=fn_data_unit_record,

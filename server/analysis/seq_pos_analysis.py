@@ -30,7 +30,7 @@ import airrmap.preprocessing.imgt as imgt
 import airrmap.preprocessing.anchors as anchors
 import airrmap.preprocessing.distance as distance
 from airrmap.application.config import AppConfig, SeqFileType
-from airrmap.preprocessing.oas_adapter_base import OASAdapterBase, AnchorItem
+from airrmap.preprocessing.seq_adapter_base import SeqAdapterBase, AnchorItem
 
 
 # %% --- SET CONFIG HERE ---
@@ -226,7 +226,7 @@ def get_coords_using_mlat(
     # Compute coordinates
     results = []
     for i in tqdm(range(len(df_seqs.index))):
-        seq_coords_d = OASAdapterBase.process_single_record(
+        seq_coords_d = SeqAdapterBase.process_single_record(
             df_seqs.iloc[i],
             seq_field=seq_field,
             anchors=anchor_items,

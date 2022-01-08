@@ -1,10 +1,9 @@
 # Base class containing common functionality
 # for processing the study sequences and
 # computing the coordinates using anchors and multilateration.
-# Can be used to build adapters for other data sources
-# (see oas_adapter_json.py).
+# Can be used to build adapters for other data sources.
 
-# tests -> test_oas_adapter_base.py (wip)
+# tests -> test_seq_adapter_base.py (wip)
 
 # %% Imports
 import hashlib
@@ -62,9 +61,9 @@ class AnchorItem():
         self.y = y
 
 
-class OASAdapterBase:
+class SeqAdapterBase:
     """
-    Base class for OAS file adapters.
+    Base class for sequence file adapters.
 
     Adapter classes derived from this should
     implement the following methods:
@@ -132,7 +131,7 @@ class OASAdapterBase:
         return dict(
             sys_file_id=file_id,
             sys_filename=pathlib.Path(fn).name,
-            sys_data_unit_sha1=OASAdapterBase._sha1file(fn),
+            sys_data_unit_sha1=SeqAdapterBase._sha1file(fn),
             sys_processed_utc=datetime.now(timezone.utc).isoformat() + 'Z',
             sys_records=record_count,
             sys_file_size=os.path.getsize(fn),
@@ -235,7 +234,7 @@ class OASAdapterBase:
         Load anchors sequences.
 
         Format of sequences should match those that will be compared
-        with OAS.
+        with the study sequence records.
 
         Parameters
         ----------
@@ -327,7 +326,7 @@ class OASAdapterBase:
 
         The distance from a sequence to each anchor must be computed for
         the distance matrix, resulting in large data sizes.
-        For example, 357,000 OAS sequences * 300 anchor sequences =
+        For example, 357,000 study sequences * 300 anchor sequences =
         ~107 million records, for just one Data Unit. Therefore, we
         use binary encoding and compression to reduce the size.
         The resulting bytes can be stored in a db BLOB field.
@@ -572,12 +571,12 @@ class OASAdapterBase:
             record_count = 0
 
         # Load anchors
-        anchors: Dict[int, AnchorItem] = OASAdapterBase.load_anchors(
+        anchors: Dict[int, AnchorItem] = SeqAdapterBase.load_anchors(
             fn_anchors=fn_anchors
         )
 
         # Get sha1 of the anchors daabase
-        anchors_file_sha1 = OASAdapterBase._sha1file(fn_anchors)
+        anchors_file_sha1 = SeqAdapterBase._sha1file(fn_anchors)
 
         # Return config
         return dict(
@@ -663,11 +662,11 @@ class OASAdapterBase:
 
         # Get codec (~14 µs)
         if save_anchor_dists:
-            anchor_dist_codec = OASAdapterBase.anchor_dist_codec(
+            anchor_dist_codec = SeqAdapterBase.anchor_dist_codec(
                 size=len(anchors))
 
         # Get distance between sequence and all anchor sequences
-        ordered_anchor_dists: OrderedDict[int, Any] = OASAdapterBase.get_distances(
+        ordered_anchor_dists: OrderedDict[int, Any] = SeqAdapterBase.get_distances(
             item1=row,
             items=anchors,
             measure_function=distance_measure_fn,
@@ -677,7 +676,7 @@ class OASAdapterBase:
         )
 
         # Compute the coordinates
-        seq_coords: Dict = OASAdapterBase.compute_sequence_coords(
+        seq_coords: Dict = SeqAdapterBase.compute_sequence_coords(
             anchor_dists=ordered_anchor_dists,
             anchors=anchors,
             num_closest_anchors=num_closest_anchors,
@@ -686,7 +685,7 @@ class OASAdapterBase:
 
         # Binary-encode distances and compress
         if save_anchor_dists:
-            anchor_dist_bytes = OASAdapterBase.anchor_dist_encode(
+            anchor_dist_bytes = SeqAdapterBase.anchor_dist_encode(
                 anchor_dists=ordered_anchor_dists,
                 codec=anchor_dist_codec,
                 compression_level=anchor_dist_compression_level,
