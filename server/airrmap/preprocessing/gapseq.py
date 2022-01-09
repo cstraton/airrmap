@@ -54,7 +54,7 @@ def get_gapped_seq(seq: str, fixed_length: int, gap_char: str = '.', left_bias=T
     gap_len = fixed_length - seq_len
     if (gap_len < 0):
         raise ValueError(
-            f'fixed_len value ({fixed_length}) is too small for sequence length ({seq_len}: {seq})'
+            f'fixed_len value ({fixed_length}) is too small for sequence length ({seq_len}: {seq}). Consider increasing envconfig.application.seq_logos.fixed_length property.'
         )
 
     # Split into two halves.
