@@ -3,6 +3,7 @@
 # %% Imports
 import argparse
 import os
+import pandas as pd
 from typing import Any, Dict, List
 
 import airrmap.preprocessing.gapseq as gapseq
@@ -45,6 +46,10 @@ def get_gapped_seqs(row: Any,
         gapped_field = gap_field['gapped_field']
         fixed_length = gap_field['fixed_length']
         seq = row[source_field]
+        
+        # Handle NA Type
+        seq = '' if isinstance(seq, pd._libs.missing.NAType) else seq
+
         gapped_seq = gapseq.get_gapped_seq(
             seq=seq,
             fixed_length=fixed_length
@@ -102,4 +107,5 @@ def main(argv):
 
 # %% Main
 if __name__ == '__main__':
-    main(None)
+    #main(None)
+    main(['/airrmap-data/GUPTA_CDRH1H2_MultiField'])
