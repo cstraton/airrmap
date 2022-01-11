@@ -46,16 +46,15 @@ docker-build:
 		--tag=$(IMAGE_NAME) \
 		.
 
-
 # Run Docker application server
 # Ensure AIRRMAP_DATA environment variable folder has been set beforehand
 docker-run:
 
 # Check if container exists, remove otherwise errors on next step
 # REF: https://stackoverflow.com/questions/38576337/how-to-execute-a-bash-command-only-if-a-docker-container-with-a-given-name-does
-ifneq ($(shell docker ps -aq -f status=exited -f name=$(CONTAINER_NAME)),)
-	docker rm $(CONTAINER_NAME)
-endif
+	ifneq ($(shell docker ps -aq -f status=exited -f name=$(CONTAINER_NAME)),)
+		docker rm $(CONTAINER_NAME)
+	endif
 
 # Run the container
 	docker run \
@@ -79,18 +78,15 @@ parcel-clear-cache:
 init-data-folder:
 
 # Check variable is set
-ifeq ($($(DATA_FOLDER_VAR)),)
-	$(error '$(DATA_FOLDER_VAR) environment variable not set.')
-endif
+#ifeq ($($(DATA_FOLDER_VAR)),)
+#	$(error '$(DATA_FOLDER_VAR) environment variable not set.')
+#endif
 
 # Create folder if it doesn't exist
-	mkdir -p "$($(DATA_FOLDER_VAR))"
+#	mkdir -p "$($(DATA_FOLDER_VAR))"
 
 # Copy files to data folder
-	@cp ./data/appconfig.yaml "$($(DATA_FOLDER_VAR))"
-	@echo Copied appconfig.yaml to "$($(DATA_FOLDER_VAR))"
-	@cp ./data/envconfig.yaml "$($(DATA_FOLDER_VAR))"
-	@echo Copied envconfig.yaml to "$($(DATA_FOLDER_VAR))"
-	@cp ./data/envinit.sh "$($(DATA_FOLDER_VAR))"
-	@echo Copied envinit.sh to "$($(DATA_FOLDER_VAR))"
-	@echo 'Completed, see "$($(DATA_FOLDER_VAR))"'
+	@read -p "Enter environment name:" envname; \
+	dest_dir=/airrmap-data/$$envname; \
+	cp -R ./env_template $$dest_dir
+	@echo 'Environment created in /airrmap-data/'
