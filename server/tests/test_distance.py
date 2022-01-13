@@ -266,8 +266,26 @@ class TestDistances(unittest.TestCase):
                 record2_kwargs=record_kwargs,
                 env_kwargs=env_kwargs
             ),
-            3,
-            'Distance should be 3.'
+            3, # Number of characters different
+            'Correct distance should be returned.'
+        )
+
+        self.assertEqual(
+            measure_distance_lev2(
+                record1=dict(
+                    col1="ABC",
+                    col2="DEF"
+                ),
+                record2=dict(
+                    col1=pd._libs.missing.NAType(), # NA Type
+                    col2="DEF"  # make same as record1, col2
+                ),
+                record1_kwargs=record_kwargs,
+                record2_kwargs=record_kwargs,
+                env_kwargs=env_kwargs
+            ),
+            3, # Should be 3 characters different (record1,col1 "ABC" vs record2,col1=NA/'')
+            'Should treat NA types as zero length string (no error).'
         )
 
     def test_create_distance_matrix(self):

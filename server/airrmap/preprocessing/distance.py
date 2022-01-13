@@ -253,6 +253,9 @@ def measure_distance_lev2(record1: Any, record2: Any,
     """
     Levenshtein with support for concatenation of multiple fields.
 
+    NOTE: Any NA values (pandas._libs.missing.NAType) will be treated
+          as zero-length strings.
+
     Parameters
     ----------
     record1 : Any
@@ -282,9 +285,12 @@ def measure_distance_lev2(record1: Any, record2: Any,
         concatentated column values.
     """
 
+    # Compute levenshtein - if NA type, convert to '' to avoid error.
+    # (NA types may be present in cdr*_aa fields if residue annotation was not fully possible;
+    #  these records should potentially be filtered out during analysis unless we wish to view them).
     return levenshtein(
-        ''.join([record1[x] for x in record1_kwargs['columns']]),
-        ''.join([record2[y] for y in record2_kwargs['columns']])
+        ''.join([record1[x] if not isinstance(record1[x], pd._libs.missing.NAType) else '' for x in record1_kwargs['columns']]),
+        ''.join([record2[y] if not isinstance(record2[y], pd._libs.missing.NAType) else '' for y in record2_kwargs['columns']])
     )
 
 
