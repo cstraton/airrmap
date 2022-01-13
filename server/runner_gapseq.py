@@ -107,5 +107,5 @@ def main(argv):
 
 # %% Main
 if __name__ == '__main__':
-    #main(None)
-    main(['/airrmap-data/GUPTA_CDRH1H2_MultiField'])
+    main(None)
+    #main(['/airrmap-data/ENV_NAME'])
