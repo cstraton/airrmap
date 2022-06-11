@@ -221,14 +221,7 @@ class FilterSelection2 extends Component {
             selection
             onChange={this.handleChange}
           />
-          <Popup
-            content={CONFIG.tooltips.sidebar.data.submit}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Form.Button content='Submit' loading={this.props.appStatusLoading} />
-            }
-          />
+          <Form.Button content='Submit' loading={this.props.appStatusLoading} />
         </Form.Group>
 
         {/* Facet row/column */}
