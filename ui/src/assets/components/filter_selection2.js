@@ -250,7 +250,7 @@ class FilterSelection2 extends Component {
         </Form.Group>
 
         {/* Heatmap Colour Field */}
-        <Header as='h5'><Icon className={'bi bi-filter'} />Heatmap Colour</Header>
+        <Header as='h5'><Icon className={'bi bi-palette'} />Heatmap Colour</Header>
         <Form.Group widths='equal'>
           <Form.Field
             name='binnedColorField'
