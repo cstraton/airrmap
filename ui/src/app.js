@@ -3,9 +3,11 @@ import 'fomantic-ui-css/semantic.css';
 import './index.css';
 
 import {
-  Button, Container, Icon, Menu, Modal,
+  Button, Container, Dimmer, Icon, Menu, Modal,
   Popup, Segment, Sidebar, Tab
 } from 'semantic-ui-react';
+
+import { ThreeDots } from 'react-loader-spinner';
 
 import usePersistedState from "./assets/components/persisted_state"
 import LeafletGrid from './assets/components/leaflet_grid.js'
@@ -645,6 +647,17 @@ function App(props) {
 
       <Container fluid={true} className='container-fixed-height-100'>
 
+        {/* Loading spinner and dim */}
+        <Dimmer active={appStatusLoading} blurring inverted>
+          <ThreeDots
+            ariaLabel="Loading animation"
+            visible={appStatusLoading}
+            color="green"
+            height='60px'
+            width='60px'
+          />
+        </Dimmer>
+
         {/* Full screen modal report */}
         <RenderROIReport id='modal-fullscreen-roi-report' />
 
@@ -656,7 +669,7 @@ function App(props) {
         <Sidebar.Pushable className={'no-margin no-border'} as={Segment}>
           <Sidebar
             as={Segment}
-            animation={'scale down'}
+            animation={'overlay'}
             visible={sidebarVisible}
             width={'very wide'}
           >
@@ -676,6 +689,7 @@ function App(props) {
           </Sidebar.Pusher>
         </Sidebar.Pushable>
       </Container>
+
     );
   }
 

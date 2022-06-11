@@ -221,14 +221,7 @@ class FilterSelection2 extends Component {
             selection
             onChange={this.handleChange}
           />
-          <Popup
-            content={CONFIG.tooltips.sidebar.data.submit}
-            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
-            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
-            trigger={
-              <Form.Button content='Submit' loading={this.props.appStatusLoading} />
-            }
-          />
+          <Form.Button content='Submit' loading={this.props.appStatusLoading} />
         </Form.Group>
 
         {/* Facet row/column */}
@@ -257,7 +250,7 @@ class FilterSelection2 extends Component {
         </Form.Group>
 
         {/* Heatmap Colour Field */}
-        <Header as='h5'><Icon className={'bi bi-filter'} />Heatmap Colour</Header>
+        <Header as='h5'><Icon className={'bi bi-palette'} />Heatmap Colour</Header>
         <Form.Group widths='equal'>
           <Form.Field
             name='binnedColorField'
