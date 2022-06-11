@@ -656,7 +656,7 @@ function App(props) {
         <Sidebar.Pushable className={'no-margin no-border'} as={Segment}>
           <Sidebar
             as={Segment}
-            animation={'scale down'}
+            animation={'overlay'}
             visible={sidebarVisible}
             width={'very wide'}
           >
