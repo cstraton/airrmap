@@ -14,8 +14,8 @@ import os
 import json
 import glob
 import argparse
-from airrmap.preprocessing.oas_adapter_json import OASAdapterJSON
-from airrmap.preprocessing.oas_adapter_base import OASAdapterBase
+from airrmap.preprocessing.seq_adapter_oascsv import SeqAdapterOASCSV
+from airrmap.preprocessing.seq_adapter_base import SeqAdapterBase
 
 from tqdm import tqdm
 from typing import Any, Dict, List
@@ -54,18 +54,16 @@ def main(argv):
     cfganc = cfg['anchor']
 
     # Get params
+    distance_measure = cfg['distance_measure']
+    distance_measure_env_kwargs = cfg['distance_measure_env_kwargs']
+    distance_measure_seq_kwargs = cfgseq['distance_measure_record_kwargs']
+    distance_measure_anchor_kwargs = cfganc['distance_measure_record_kwargs']
     fn_anchor_db = os.path.join(
         env_folder, cfganc['build_folder'], cfganc['build_db_file'])
-    anchor_seq_field = cfganc['seq_field']
-    anchor_seq_field_is_json = cfganc['seq_field_is_json']
-    distance_measure = cfganc['distance_measure']
-    distance_measure_kwargs = dict(regions=cfganc['regions'])
     num_closest_anchors = cfgseq['num_closest_anchors']
     save_anchor_dists = cfgseq['save_anchor_dists']
     anchor_dist_compression = cfgseq['anchor_dist_compression']
     anchor_dist_compression_level = cfgseq['anchor_dist_compression_level']
-    seq_field = cfgseq['seq_field']
-    seq_field_is_json = cfgseq['seq_field_is_json']
     seq_id_field = cfgseq['seq_id_field']
     seq_row_start = cfgseq['seq_row_start']
     output_file_compression = cfgseq['output_file_compression']
@@ -153,12 +151,10 @@ def main(argv):
         # Prepare some of the args
         # such as record count
         log.info('Preparing initial arguments...')
-        prep_args: Dict = OASAdapterBase.prepare(
+        prep_args: Dict = SeqAdapterBase.prepare(
             fn=fn_data_unit,
             seq_row_start=seq_row_start,
-            fn_anchors=fn_anchor_db,
-            anchor_seq_field=anchor_seq_field,
-            anchor_convert_json=anchor_seq_field_is_json
+            fn_anchors=fn_anchor_db
         )
         log.info('Finished preparing initial arguments.')
 
@@ -167,11 +163,10 @@ def main(argv):
 
         # Write the meta file
         log.info('Start writing meta file...')
-        OASAdapterJSON.process_meta(
+        SeqAdapterOASCSV.process_meta(
             file_id=file_id,
             fn=fn_data_unit,
             fn_out=fn_data_unit_meta,
-            openfunc=prep_args['openfunc'],
             record_count=prep_args['record_count'],
             fn_anchors_sha1=prep_args['anchors_file_sha1'],
             anchor_dist_compression=anchor_dist_compression,
@@ -182,24 +177,23 @@ def main(argv):
         # Compute distances and coordinates, and
         # write the records file.
         log.info('Start computing distances and coordinates...')
-        OASAdapterJSON.process_records(
+        SeqAdapterOASCSV.process_records(
             file_id=file_id,
             fn=fn_data_unit,
             fn_out=fn_data_unit_record,
-            openfunc=prep_args['openfunc'],
             record_count=prep_args['record_count'],
             seq_id_field=seq_id_field,
-            seq_field=seq_field,
             anchors=prep_args['anchors'],
             num_closest_anchors=num_closest_anchors,
             distance_measure_name=distance_measure,
-            distance_measure_kwargs=distance_measure_kwargs,
+            distance_measure_env_kwargs=distance_measure_env_kwargs,
+            distance_measure_seq_kwargs=distance_measure_seq_kwargs,
+            distance_measure_anchor_kwargs=distance_measure_anchor_kwargs,
             compression=output_file_compression,
             chunk_size=process_chunk_size,
             save_anchor_dists=save_anchor_dists,
             anchor_dist_compression=anchor_dist_compression,
             anchor_dist_compression_level=anchor_dist_compression_level,
-            convert_json=seq_field_is_json,
             stop_after_n_chunks=0,
             nb_workers=process_nb_workers
         )

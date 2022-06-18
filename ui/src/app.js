@@ -3,13 +3,15 @@ import 'fomantic-ui-css/semantic.css';
 import './index.css';
 
 import {
-  Button, Container, Grid, Header, Icon, Menu, Modal,
-  Segment, Sidebar, Tab
+  Button, Container, Dimmer, Icon, Menu, Modal,
+  Popup, Segment, Sidebar, Tab
 } from 'semantic-ui-react';
 
-import usePersistedState from "./assets/components/persisted_state";
+import { ThreeDots } from 'react-loader-spinner';
+
+import usePersistedState from "./assets/components/persisted_state"
 import LeafletGrid from './assets/components/leaflet_grid.js'
-import FilterSelection from './assets/components/filter_selection.js'
+import FilterSelection2 from './assets/components/filter_selection2.js'
 import KDESettings from './assets/components/kde_settings.js'
 import ROIReport from './assets/components/roi_report.js'
 import SeqLocator from './assets/components/seq_locator.js'
@@ -19,23 +21,28 @@ import CONFIG from '../config.json';
 function App(props) {
 
   // State and vars
-  // If changing, consider updating Set loaded mapcontroller properties
+  // NOTE!: If changing, consider updating 'For loaded properties (using usePersistedState):' (below)
+  //        e.g. mapController.setBinnedEnabled(binnedEnabled).
+  //        Also: (1) add property to master_map_controller.js.
+  //              (2) add callback (e.g. setMyProperty, below)
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [filters, _setFilters] = useState({});  // User filters
 
   // Binned tile settings
-  const [brightness, _setBrightness] = useState(1.0); // Map brightness multiplier slider (tiles/binned)
-  const [numBins, _setNumBins] = useState(2); // 0 = 256, 1 = 128, 2 = 64 etc.
+  const [binnedEnabled, _setBinnedEnabled] = usePersistedState('store-app-binnedEnabled', false);
+  const [brightness, _setBrightness] = usePersistedState('store-app-brightness', 1.0); // Map brightness multiplier slider (tiles/binned)
+  const [numBins, _setNumBins] = usePersistedState('store-app-numBins', 1); // 0 = 256, 1 = 128, 2 = 64 etc.
 
   // KDE settings
-  const [kdeBandwidth, _setKdeBandwidth] = usePersistedState('store-app-kdeBandwidth', 1.0); // KDE kernel bandwidth
+  const [kdeEnabled, _setKdeEnabled] = usePersistedState('store-app-kdeEnabled', true);
+  const [kdeBandwidth, _setKdeBandwidth] = usePersistedState('store-app-kdeBandwidth', 0.8); // KDE kernel bandwidth
   const [kdeColormap, _setKdeColormap] = usePersistedState('store-app-kdeColormap', 'RdBu'); // Colour map to use
-  const [kdeColormapInvert, _setKdeColormapInvert] = usePersistedState('store-app-kdeColormapInvert', false); // Invert colours
-  const [kdeBrightness, _setKdeBrightness] = usePersistedState('store-app-kdeBrightness', 1.0); // KDE brightness multiplier slider
-  const [kdeRelativeMode, _setKdeRelativeMode] = usePersistedState('store-app-kdeRelativeMode', 'ALL');
+  const [kdeColormapInvert, _setKdeColormapInvert] = usePersistedState('store-app-kdeColormapInvert', true); // Invert colours
+  const [kdeBrightness, _setKdeBrightness] = usePersistedState('store-app-kdeBrightness', 2.0); // KDE brightness multiplier slider
+  const [kdeRelativeMode, _setKdeRelativeMode] = usePersistedState('store-app-kdeRelativeMode', 'SINGLE');
   const [kdeRelativeSelection, _setKdeRelativeSelection] = usePersistedState('store-app-kdeRelativeSelection', 'ALL');
-  const [kdeRowName, _setKdeRowName] = useState('');
-  const [kdeColumnName, _setKdeColumnName] = useState('');
+  const [kdeRowName, _setKdeRowName] = usePersistedState('store-app-kdeRowName', '');
+  const [kdeColumnName, _setKdeColumnName] = usePersistedState('store-app-kdeColumnName', '');
 
   // Query report information
   const [queryReport, setQueryReport] = useState({});
@@ -55,7 +62,7 @@ function App(props) {
   const [markerItems, _setMarkerItems] = useState([]); // Map marker items
 
   // Status message
-  const [appStatusMessage, setAppStatusMessage] = useState(''); // Status message
+  const [appStatusMessage, setAppStatusMessage] = useState('Welcome to AIRR Map.'); // Status message
   const [appStatusHidden, setAppStatusHidden] = useState(false); // True/False
   const [appStatusType, setAppStatusType] = useState('warning'); // 'none', 'info', 'warning', 'error', 'positive'
   const [appStatusLoading, setAppStatusLoading] = useState(false); // true or false
@@ -63,7 +70,7 @@ function App(props) {
   // Sync maps and map control
   const [mapSync, _setMapSync] = useState(false) // Whether maps are synced or not
   const [mapGridEnabled, _setMapGridEnabled] = useState(false) // 
-  const [mapStatsEnabled, _setMapStatsEnabled] = useState(false)
+  const [mapStatsEnabled, _setMapStatsEnabled] = usePersistedState('store-app-mapStatsEnabled', false);
   const [mapController, setMapController] = useState(new MasterMapController());
 
 
@@ -73,18 +80,30 @@ function App(props) {
   // If not done, loaded properties from usePersistedState
   // won't take effect until changing the value / triggering
   // the onChange event in the UI.
+  mapController.setBinnedEnabled(binnedEnabled)
+  mapController.setNumBins(numBins)
+  mapController.setBrightness(brightness)
+  mapController.setKdeEnabled(kdeEnabled)
   mapController.setKdeBandwidth(kdeBandwidth)
   mapController.setKdeBrightness(kdeBrightness)
   mapController.setKdeColormap(kdeColormap)
   mapController.setKdeColormapInvert(kdeColormapInvert)
   mapController.setKdeRelativeMode(kdeRelativeMode)
   mapController.setKdeRelativeSelection(kdeRelativeSelection)
+  mapController.setKdeRowName(kdeRowName)
+  mapController.setKdeColumnName(kdeColumnName)
+  mapController.setMapStatsEnabled(mapStatsEnabled)
 
   // --- Callbacks ---
 
   const setFilters = (filters) => {
     mapController.filters = filters;
     _setFilters(filters);
+  }
+
+  const setBinnedEnabled = (value) => {
+    mapController.setBinnedEnabled(value);
+    _setBinnedEnabled(value);
   }
 
   const setNumBins = (numBins) => {
@@ -95,6 +114,11 @@ function App(props) {
   const setBrightness = (brightness) => {
     mapController.setBrightness(brightness);
     _setBrightness(brightness);
+  }
+
+  const setKdeEnabled = (value) => {
+    mapController.setKdeEnabled(value);
+    _setKdeEnabled(value);
   }
 
   const setKdeBrightness = (value) => {
@@ -152,15 +176,14 @@ function App(props) {
     _setMapSync(mapSync);
   }
 
+  const setMapStatsEnabled = (value) => {
+    mapController.setMapStatsEnabled(value);
+    _setMapStatsEnabled(value);
+  }
+
   const setMapGridEnabled = (gridEnabled) => {
     mapController.setMapGridEnabled(gridEnabled)
     _setMapGridEnabled(gridEnabled);
-  }
-
-  const setMapStatsEnabled = (value) => {
-    //mapController not used as don't need the Leaflet map instance.
-    //mapController.setMapStatsEnabled(value)
-    _setMapStatsEnabled(value)
   }
 
   const setMarkerItems = (markerItems) => {
@@ -372,29 +395,36 @@ function App(props) {
   }
 
   // Construct tab panes
+  // Use `render: () =>` instead of `pane:` for <Tab> property renderActiveOnly={true}.
+  // If using renderActiveOnly={false}, react-semantic-ui-range slider doesn't render
+  // <value> correctly (issue with component / race condition with rendering?).
   function RenderPanes() {
     return (
       [
         {
-          // Environment and Filters
-          menuItem: { key: 'filters', content: 'Filters' },
-          pane:
+          menuItem: { key: 'filters1', content: 'Data' },
+          render: () =>
             <Tab.Pane key='filters-pane' className={'no-border'}>
-              <FilterSelection
+              <FilterSelection2
                 submitHandler={submitFiltersHandler}
-                brightness={brightness}
-                setBrightness={setBrightness}
-                numBins={numBins}
-                setNumBins={setNumBins}
+                appStatusLoading={appStatusLoading}
               />
             </Tab.Pane>
         },
         {
           // KDE config
-          menuItem: { key: 'kde', content: 'KDE' },
-          pane:
+          menuItem: { key: 'kde', content: 'Rendering' },
+          render: () =>
             <Tab.Pane key='kde-pane' className={'no-border'}>
               <KDESettings
+                binnedEnabled={binnedEnabled}
+                setBinnedEnabled={setBinnedEnabled}
+                brightness={brightness}
+                setBrightness={setBrightness}
+                numBins={numBins}
+                setNumBins={setNumBins}
+                kdeEnabled={kdeEnabled}
+                setKdeEnabled={setKdeEnabled}
                 kdeBandwidth={kdeBandwidth}
                 setKdeBandwidth={setKdeBandwidth}
                 kdeBrightness={kdeBrightness}
@@ -419,8 +449,8 @@ function App(props) {
         },
         {
           // ROI Selection
-          menuItem: { key: 'roi-report', content: 'ROI-Select' },
-          pane:
+          menuItem: { key: 'roi-report', content: 'Selection' },
+          render: () =>
             <Tab.Pane key='roi-report-pane' className={'no-border'}>
               <ROIReport
                 //If updating this, also update RenderROIReport below
@@ -433,8 +463,8 @@ function App(props) {
         },
         {
           // Sequence locator list
-          menuItem: { key: 'seq-locator', content: 'Search' },
-          pane:
+          menuItem: { key: 'seq-locator', content: 'Markers' },
+          render: () =>
             <Tab.Pane key='seq-locator-pane' className={'no-border'}>
               <SeqLocator
                 env_name={filters['env_name']}
@@ -449,109 +479,165 @@ function App(props) {
 
   function RenderStatus({ appStatusLoading, appStatusType, appStatusMessage }) {
     return (
-      <Container text textAlign='right'>
-        {/* Loading icon */}
-        {appStatusLoading ?
-          <Icon
-            name={appStatusLoading ? 'circle notched' : ''}
-            loading={appStatusLoading}
-          />
-          : null
+      <Popup
+        content={appStatusMessage}
+        mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+        mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+        trigger={
+          <span className='toolbar-status-inner'>
+            {appStatusMessage}
+          </span>
         }
-        {/* Message */}
-        {appStatusMessage}
-      </Container>
-    )
+      />
+    );
   }
 
   function RenderTopHeader() {
     return (
       //Top Menu 
-      <Menu className={'no-margin'} color={'grey'} inverted size={'tiny'}>
+      <div className={'toolbar-top-outer'}>
+        <div className={'toolbar-top-inner'}>
+          <Menu className={'no-margin'} size={'tiny'} color={'green'} compact>
 
-        {/* Sidebar visibility */}
-        <Menu.Item
-          name='Show Sidebar'
-          toggle
-          active={sidebarVisible}
-          onClick={() => setSidebarVisible(!(sidebarVisible))}
-        >
-          <Icon className='bi bi-list' />
-        </Menu.Item>
+            {/* Sidebar visibility */}
+            <Menu.Item
+              name='Show Sidebar'
+              toggle
+              active={sidebarVisible}
+              onClick={() => setSidebarVisible(!(sidebarVisible))}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.sidebar}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-list' />
+                }
+              />
+            </Menu.Item>
 
-        {/* App name */}
-        <Menu.Item
-          name='AIRR Map'
-        />
+            {/* App name */}
+            <Menu.Item
+              name='AIRR Map'
+            />
 
-        {/* Sync button */}
-        <Menu.Item position='right'>
-          <Button icon labelPosition='left' toggle active={mapSync} onClick={() => setMapSync(!(mapSync))}>
-            <Icon className='bi bi-arrow-left-right' />
-            Sync
-          </Button>
-        </Menu.Item>
+            {/* Sync button */}
+            <Menu.Item>
+              <Popup
+                content={CONFIG.tooltips.toolbar.sync}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Button icon labelPosition='left' toggle active={mapSync} onClick={() => setMapSync(!(mapSync))}>
+                    <Icon className='bi bi-arrow-left-right' />
+                    Sync
+                  </Button>
+                }
+              />
+            </Menu.Item>
 
-        {/* Grid button */}
-        <Menu.Item>
-          <Button icon labelPosition='left' toggle active={mapGridEnabled} onClick={() => setMapGridEnabled(!(mapGridEnabled))}>
-            <Icon className='bi bi-grid-3x3' />
-            Grid
-          </Button>
-        </Menu.Item>
+            {/* Grid button */}
+            <Menu.Item>
+              <Popup
+                content={CONFIG.tooltips.toolbar.grid}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Button icon labelPosition='left' toggle active={mapGridEnabled} onClick={() => setMapGridEnabled(!(mapGridEnabled))}>
+                    <Icon className='bi bi-grid-3x3' />
+                    Grid
+                  </Button>
+                }
+              />
+            </Menu.Item>
 
-        {/* Stats button */}
-        <Menu.Item>
-          <Button icon labelPosition='left' toggle active={mapStatsEnabled} onClick={() => setMapStatsEnabled(!(mapStatsEnabled))}>
-            <Icon className='bi bi-text-indent-left' />
-            Stats
-          </Button>
-        </Menu.Item>
+            {/* Stats button */}
+            <Menu.Item>
+              <Popup
+                content={CONFIG.tooltips.toolbar.stats}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Button icon labelPosition='left' toggle active={mapStatsEnabled} onClick={() => setMapStatsEnabled(!(mapStatsEnabled))}>
+                    <Icon className='bi bi-text-indent-left' />
+                    Stats
+                  </Button>
+                }
+              />
+            </Menu.Item>
 
-        {/* Area select toggle */}
-        <Menu.Item
-          name='Enable area select'
-          active={selectEnabled}
-          onClick={() => setSelectEnabled(!(selectEnabled))}
-        >
-          <Icon className='bi bi-pen' />
-        </Menu.Item>
+            {/* Area select toggle */}
+            <Menu.Item
+              name='Enable area select'
+              active={selectEnabled}
+              onClick={() => setSelectEnabled(!(selectEnabled))}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.selectDraw}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-pen' />
+                }
+              />
+            </Menu.Item>
 
-        {/* Remove last selection */}
-        <Menu.Item
-          name='Remove last selection'
-          onClick={() => mapController.onAreaSelectRemoveLast()}
-        >
-          <Icon className='bi bi-arrow-counterclockwise' />
-        </Menu.Item>
+            {/* Remove last selection */}
+            <Menu.Item
+              name='Remove last selection'
+              onClick={() => mapController.onAreaSelectRemoveLast()}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.selectUndo}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-arrow-counterclockwise' />
+                }
+              />
+            </Menu.Item>
 
-        {/* Remove all selections */}
-        <Menu.Item
-          name='Remove all selections'
-          onClick={() => mapController.onAreaSelectClear()}
-        >
-          <Icon className='bi bi-x' />
-        </Menu.Item>
+            {/* Remove all selections */}
+            <Menu.Item
+              name='Remove all selections'
+              onClick={() => mapController.onAreaSelectClear()}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.selectRemoveAll}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-x' />
+                }
+              />
+            </Menu.Item>
 
-        {/* Show report */}
-        <Menu.Item
-          name='Show report'
-          active={roiReportOpen}
-          onClick={() => setROIReportOpen(!(roiReportOpen))}
-        >
-          <Icon className='bi bi-bar-chart-fill' />
-        </Menu.Item>
-
-        {/* App status*/}
-        <Menu.Item position='right'>
-          <RenderStatus
-            appStatusLoading={appStatusLoading}
-            appStatusType={appStatusType}
-            appStatusMessage={appStatusMessage}
-          />
-        </Menu.Item>
-
-      </Menu >
+            {/* Show report */}
+            <Menu.Item
+              name='Show report'
+              active={roiReportOpen}
+              onClick={() => setROIReportOpen(!(roiReportOpen))}
+            >
+              <Popup
+                content={CONFIG.tooltips.toolbar.report}
+                mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+                mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+                trigger={
+                  <Icon className='bi bi-bar-chart-fill' />
+                }
+              />
+            </Menu.Item>
+            <Menu.Item>
+              {/* Status */}
+              <RenderStatus
+                appStatusLoading={appStatusLoading}
+                appStatusType={appStatusType}
+                appStatusMessage={appStatusMessage}
+              />
+            </Menu.Item>
+          </Menu >
+        </div>
+      </div>
     );
   }
 
@@ -561,43 +647,49 @@ function App(props) {
 
       <Container fluid={true} className='container-fixed-height-100'>
 
+        {/* Loading spinner and dim */}
+        <Dimmer active={appStatusLoading} blurring inverted>
+          <ThreeDots
+            ariaLabel="Loading animation"
+            visible={appStatusLoading}
+            color="green"
+            height='60px'
+            width='60px'
+          />
+        </Dimmer>
+
         {/* Full screen modal report */}
         <RenderROIReport id='modal-fullscreen-roi-report' />
 
         {/* The top header */}
         <RenderTopHeader />
 
-        <Grid columns={1} >
+        {/* Left Sidebar */}
+        {/* Adapted from: https://react.semantic-ui.com/modules/sidebar/#states-visible */}
+        <Sidebar.Pushable className={'no-margin no-border'} as={Segment}>
+          <Sidebar
+            as={Segment}
+            animation={'overlay'}
+            visible={sidebarVisible}
+            width={'very wide'}
+          >
+            {/*Tab Container */}
+            <Tab menu={{ secondary: true, pointing: true, color: 'blue' }} panes={RenderPanes()} renderActiveOnly={true} />
+          </Sidebar>
 
-          {/* Left Sidebar */}
-          {/* Adapted from: https://react.semantic-ui.com/modules/sidebar/#states-visible */}
-          <Grid.Column width={16}>
-            <Sidebar.Pushable className={'no-margin no-border'} as={Segment}>
-              <Sidebar
-                as={Segment}
-                animation={'overlay'}
-                visible={sidebarVisible}
-                width={'very wide'}
-              >
-                {/*Tab Container */}
-                <Tab menu={{ secondary: true, pointing: true, color: 'blue' }} panes={RenderPanes()} renderActiveOnly={false} />
-              </Sidebar>
-
-              {/* Right Map Grid */}
-              <Sidebar.Pusher>
-                <LeafletGrid
-                  key='leaflet-grid-main'
-                  mapController={mapController}
-                  facetRowValues={facetRowValues}
-                  facetColValues={facetColValues}
-                  queryReport={queryReport}
-                  mapStatsEnabled={mapStatsEnabled}
-                />
-              </Sidebar.Pusher>
-            </Sidebar.Pushable>
-          </Grid.Column>
-        </Grid>
+          {/* Right Map Grid */}
+          <Sidebar.Pusher>
+            <LeafletGrid
+              key='leaflet-grid-main'
+              mapController={mapController}
+              facetRowValues={facetRowValues}
+              facetColValues={facetColValues}
+              queryReport={queryReport}
+            />
+          </Sidebar.Pusher>
+        </Sidebar.Pushable>
       </Container>
+
     );
   }
 

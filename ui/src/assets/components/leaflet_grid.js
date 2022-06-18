@@ -10,8 +10,7 @@ function LeafletGrid ( {
     mapController,
     facetRowValues,
     facetColValues,
-    queryReport,
-    mapStatsEnabled
+    queryReport
     }) {
 
   // If facet row/column was specified, the server will have provided a list
@@ -26,7 +25,7 @@ function LeafletGrid ( {
   // Build config for each map (row, col)
   // Url format:
   // e.g. http://localhost:5000/tiles/imagery/<zoom>/<x>/<y>?a=1&q=<query_filters> ...
-  //      ... &fr=record.Subject&fc=record.Longitudinal}> ...
+  //      ... &fr=r.Subject&fc=r.Longitudinal}> ...
   //      ...&v1min=1.0&v1max=2880
   // Array format:
   //      [[1, 2, 3], 
@@ -74,7 +73,6 @@ function LeafletGrid ( {
                   iCol={iCol}
                   facetRowValue={mapItem['r']}
                   facetColValue={mapItem['c']}
-                  mapStatsEnabled={mapStatsEnabled}
                   stats={mapItem['stats']}
                 >
                 </LeafletItem>

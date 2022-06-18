@@ -7,16 +7,18 @@ import pandas as pd
 import numpy as np
 import itertools
 import random
-import editdistance
-
+import collections
+import json
+from numba import njit
+from polyleven import levenshtein
 from tqdm import tqdm
 from sklearn import manifold
 from sklearn.decomposition import PCA
-from scipy.spatial import distance as scipydist
 from scipy.spatial.distance import pdist, squareform
-from typing import Callable, List, Tuple, Any
+from typing import Callable, Dict, Optional, Any
 
 
+@njit
 def compute_euclidean(x1, y1, x2, y2):
     """
     Euclidean distance.
@@ -31,7 +33,7 @@ def compute_euclidean(x1, y1, x2, y2):
     return (dx + dy)**0.5
 
 
-def measure_distance1(string1: str, string2: str):
+def measure_distance1(record1: Dict, record2: Dict, record1_kwargs: Dict, record2_kwargs: Dict, env_kwargs: Dict):
     """
     Measure distance 1.
 
@@ -39,7 +41,14 @@ def measure_distance1(string1: str, string2: str):
     starting from the first character.
     Distance is +1 for every different
     or different or additional character.
+
+    record1_kwargs and record2_kwargs should
+    contain a 'seq' property with the string
+    to compare.
     """
+
+    string1 = record1[record1_kwargs['seq']]
+    string2 = record2[record2_kwargs['seq']]
 
     # Get longest (a) and shortest (b)
     if len(string1) >= len(string2):
@@ -119,32 +128,97 @@ def measure_distance2(string1: str, string2: str):
     return dist
 
 
-def measure_distance3(item1: dict, item2: dict, regions: list):
+def measure_distance3(record1: Any, record2: Any, record1_kwargs: Dict, record2_kwargs: Dict, env_kwargs: Dict):
     """
     Measure distance 3.
 
-    Compute the distance between two
+    Note: Keys and values will be trimmed and
+          comparison will be case insensitive.
+    Computes the distance between two
     annotated sequences. +1 for each residue different.
     CARE!: +1 distance will be added to any gaps - consider this if using different
     lengths / partials, or if the annotated sequence contains '.' items.
 
-    :param item1: The sequence. Should be a dictionary, e.g.:
-    record {} -> region ('cdrh2') -> residue number (imgt '26').
+    Parameters
+    ----------
+    record1 : Any
+        Dict-like record.
 
-    :param item2: Second annotated sequence.
-    :param regions: List of regions to compare. Each item must contain
-    all regions passed (otherwise exception occurs).
+    record2 : Any
+        Dict-like record.
 
+    record1_kwargs : Dict
+        Should contain a 'numbered_seq_field' property
+        that points to the property in record1 containing
+        a Dict-like or JSON-annotated sequence.
+        e.g.: record {} -> region ('cdrh2') -> residue number (imgt '26').
+        Should contain 'convert_json_single_quoted' property, where True
+        replaces single-quoted JSON strings, so they can be loaded
+        by json.loads() (assumes no values have single quotes in).
+
+    record2_kwargs : Dict
+        Should contain a 'numbered_seq_field' property
+        that points to the property in record2 containing
+        a Dict-like or JSON-annotated sequence.
+        e.g.: record {} -> region ('cdrh2') -> residue number (imgt '26').
+        Should contain 'convert_json_single_quoted' property, where True
+        replaces single-quoted JSON strings, so they can be loaded
+        by json.loads() (assumes no values have single quotes in).
+
+    env_kwargs : Dict
+        Should contain a 'regions' property; a List containing
+        the region names to compare.
+        e.g. ['cdrh1', 'cdrh2']
+
+    Returns
+    -------
+    int
+        The computed distance.
+
+    Raises
+    ------
+    Exception
+        If either item/record doesn't contain all regions.
     """
 
     # Ensure at least one region
+    regions = env_kwargs['regions']
     if len(regions) < 1:
         raise Exception('No regions provided')
 
+    # Get numbered sequence field
+    item1 = record1[record1_kwargs['numbered_seq_field']]
+    item2 = record2[record2_kwargs['numbered_seq_field']]
+
+    # Convert single quotes if required
+    # NOTE: assumes no values with single quotes
+    # ast.literal_eval() is too slow, so convert and use json.loads.
+    if record1_kwargs['convert_json_single_quoted'] == True:
+        item1 = item1.replace("'", '"')
+    if record2_kwargs['convert_json_single_quoted'] == True:
+        item2 = item2.replace("'", '"')
+
+    # Load JSON
+    if not isinstance(item1, collections.Mapping):
+        item1 = json.loads(item1)
+    if not isinstance(item2, collections.Mapping):
+        item2 = json.loads(item2)
+
+    # Perform distance measurement
     total_distance = 0
     for region_key in regions:
         region1 = item1[region_key]
         region2 = item2[region_key]
+
+        # Trim and make case insensitve
+        # OAS has trailing space for annotated residue keys,
+        # which can cause issues during comparison to anchors.
+        # (Jan 2022).
+        region1 = {k.strip().upper(): v.strip().upper()
+                   for k, v in region1.items()}
+        region2 = {k.strip().upper(): v.strip().upper()
+                   for k, v in region2.items()}
+
         set1 = set(region1.keys())
         set2 = set(region2.keys())
 
@@ -153,7 +227,7 @@ def measure_distance3(item1: dict, item2: dict, regions: list):
         setintersect = set1.intersection(set2)
         uniondiff = 0
         for k in setintersect:
-            if region1[k] != region2[k]:
+            if region1[k.strip()] != region2[k.strip()]:
                 uniondiff += 1
 
         # +1 for each key not in both
@@ -168,14 +242,60 @@ def measure_distance3(item1: dict, item2: dict, regions: list):
 
 def measure_distance_lev1(item1: str, item2: str, **kwargs):
     """
-    Measure distance levenshtein (editdistance library)
+    Measure distance levenshtein (Polyleven library)
     """
-    return editdistance.eval(item1, item2)
+    return levenshtein(item1, item2)
+
+
+def measure_distance_lev2(record1: Any, record2: Any,
+                          record1_kwargs: Dict, record2_kwargs: Dict,
+                          env_kwargs: Optional[Dict] = None) -> int:
+    """
+    Levenshtein with support for concatenation of multiple fields.
+
+    NOTE: Any NA values (pandas._libs.missing.NAType) will be treated
+          as zero-length strings.
+
+    Parameters
+    ----------
+    record1 : Any
+        Dict-like record.
+
+    record2 : Any
+        Dict-like record.
+
+    record1_kwargs : Any
+        Dictionary with a 'columns' property containing
+        a sequence of string properties to concatenate.
+        e.g. ['cdr1_aa', 'cdr2_aa']
+
+    record2_kwargs : Any
+        Dictionary with a 'columns' property containing
+        a sequence of string properties to concatenate.
+        e.g. ['cdr1_aa', 'cdr2_aa']
+
+    env_kwargs : Any, optional
+        Environment-level arguments.
+        Not used, default is None.
+
+    Returns
+    -------
+    int
+        The Levenshtein distance for the
+        concatentated column values.
+    """
+
+    # Compute levenshtein - if NA type, convert to '' to avoid error.
+    # (NA types may be present in cdr*_aa fields if residue annotation was not fully possible;
+    #  these records should potentially be filtered out during analysis unless we wish to view them).
+    return levenshtein(
+        ''.join([record1[x] if not isinstance(record1[x], pd._libs.missing.NAType) else '' for x in record1_kwargs['columns']]),
+        ''.join([record2[y] if not isinstance(record2[y], pd._libs.missing.NAType) else '' for y in record2_kwargs['columns']])
+    )
 
 
 # %%
-def create_distance_matrix(records: pd.DataFrame, distance_function: Callable,
-                           measure_value: str = 'aa', **kwargs):
+def create_distance_matrix(records: pd.DataFrame, distance_function: Callable, record_kwargs: Dict, env_kwargs: Dict):
     """
     Compute square distance matrix for all pairs of records
 
@@ -186,9 +306,9 @@ def create_distance_matrix(records: pd.DataFrame, distance_function: Callable,
     :param distance_function: function that takes (a, b) and returns\
     a numeric distance
 
-    :param measure_value: record property to measure distance for
+    :param record_kwargs: record-level kwargs for the distance function
 
-    :param **kwargs: additional args required for the distance function
+    :param env_kwargs: environment-level kwargs for the distance function
 
     :returns: square DataFrame of distances
     """
@@ -204,13 +324,11 @@ def create_distance_matrix(records: pd.DataFrame, distance_function: Callable,
     key_pairs = list(itertools.combinations(keys, 2))
     for pair in tqdm(key_pairs, desc='Create distance matrix'):
         key1, key2 = pair
-        # record1 = records[key1]
-        # record2 = records[key2]
         record1 = records.loc[key1]
         record2 = records.loc[key2]
 
         dist = distance_function(
-            record1[measure_value], record2[measure_value], **kwargs)
+            record1, record2, record_kwargs, record_kwargs, env_kwargs)
         df_distances.at[key1, key2] = dist
         df_distances.at[key2, key1] = dist
 

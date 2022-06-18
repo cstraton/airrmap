@@ -40,7 +40,7 @@ def get_query(env_name: str,
         List of filters to apply, by default [].
         Example:
         [
-            {'filter_name': 'file.Chain', 'filter_value': 'Heavy'}
+            {'filter_name': 'f.Chain', 'filter_value': 'Heavy'}
         ]
 
 

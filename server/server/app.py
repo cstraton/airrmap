@@ -9,6 +9,7 @@ from quart import make_response
 from quart_cors import cors
 from quart import Response
 from quart import request
+from quart import send_from_directory
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -44,14 +45,12 @@ from airrmap.shared import models
 from airrmap.application.kde import KDERelativeMode, KDERelativeSelection, KDEItem, KDEGroup, KDEManager
 from airrmap.shared.timing import Timing
 
-
 # %% Module level vars
 # app = Flask(__name__)
-app = Quart(__name__)
+app = Quart(__name__, static_url_path='', static_folder=r'static')
 # CORS(app)  # Allow any origin, any route. (for cross-origin errors in browser).
 cors(app)
-class_rgb = None
-v_group_le = None
+class_rgb = np.array([])
 scaler_xy = None
 data_repo: DataRepo
 tile_helper: TileHelper
@@ -62,6 +61,13 @@ request_ctr = 0
 kde_manager = KDEManager()
 cfg = config.AppConfig()
 env_name = cfg.default_environment
+
+
+def _static_folder():
+    """
+    Get static folder path
+    """
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)), 'static')
 
 
 def _compute_seq_coords(env_name: str, seq_list_text: str, cfg: config.AppConfig, scaler_xy) -> List[Dict]:
@@ -107,18 +113,10 @@ def _compute_seq_coords(env_name: str, seq_list_text: str, cfg: config.AppConfig
     # Split to lines
     seq_list = seq_list_text.splitlines(keepends=False)
 
-    # Check if JSON format (checks first line)
-    try:
-        json.loads(seq_list[0])
-        convert_json = True
-    except Exception as ex:
-        convert_json = False
-
     # Compute the coordinates
     result_list = compute_coords.get_coords(
         env_name=env_name,
         seq_list=seq_list,
-        convert_json=convert_json,
         app_cfg=cfg
     )
 
@@ -147,13 +145,17 @@ def _compute_seq_coords(env_name: str, seq_list_text: str, cfg: config.AppConfig
 def _build_tile_binned(tile_request: models.TileRequest,
                        df_facet: pd.DataFrame,
                        cfg: config.AppConfig,
-                       num_bins: int,
                        num_classes: int,
-                       class_rgb) -> Image.Image:
+                       class_rgb,
+                       t: Timing = None) -> Image.Image:
     """
     Compute the 2D histogram for a tile and return the
     rendered image.
     """
+
+    # Init timer
+    if t is None:
+        t = Timing()
 
     # Get the binned data
     abinned = TileHelper.get_tile_binned(
@@ -170,6 +172,7 @@ def _build_tile_binned(tile_request: models.TileRequest,
         world_class=cfg.column_class,
         num_classes=int(num_classes)
     )
+    t.add('Binned tile values computed.')
 
     # Get the image
     im_binned = TileHelper.get_tile_image(
@@ -181,6 +184,7 @@ def _build_tile_binned(tile_request: models.TileRequest,
         tile_mask=None,
         brightness=tile_request.brightness
     )
+    t.add('Binned tile image created.')
 
     # Draw tile debug information
     imdraw = ImageDraw.Draw(im_binned)
@@ -191,6 +195,7 @@ def _build_tile_binned(tile_request: models.TileRequest,
             f'zoom:{tile_request.tile_zoom} x:{str(tile_request.tile_x)} y:{str(tile_request.tile_y)}',
             (255, 255, 255)
         )
+        t.add('Binned tile debug values rendered.')
 
     # Return
     return im_binned
@@ -198,7 +203,15 @@ def _build_tile_binned(tile_request: models.TileRequest,
 
 # %% Routes
 @app.route('/')
+async def home():
+    """Home/application page (index.html)"""
+    static_folder = _static_folder()
+    return await send_from_directory(static_folder, 'index.html')
+
+
+@app.route('/sys/hello/')
 async def hello():
+    """Test endpoint"""
     return "Welcome to AIRR Map."
 
 
@@ -224,7 +237,6 @@ async def get_anchor_list(env_name):
     global scaler_xy
     return anchors.get_anchors_json(fn_anchors=cfg.get_anchordb(env_name),
                                     scaler_xy=scaler_xy,
-                                    v_group_le=v_group_le,
                                     class_rgb=class_rgb)
 
 
@@ -288,9 +300,21 @@ async def lookup_env_list():
     """Get available environment names for the dropdown list."""
     cfg = config.AppConfig()
     env_data: dict = indexer.get_env_list(cfg.index_db)
-    env_list = [x['name'] for x in env_data]
+
+    # Build list in format required for dropdowns
+    env_list = []
+    for x in env_data:
+        item = dict(
+            key=x['name'],
+            text=x['name'],
+            value=x['name'],
+        )
+        env_list.append(item)
+
+    # JSON encode
     env_list_json = json.dumps(env_list)
 
+    # Return
     return Response(
         env_list_json,
         status=200,
@@ -303,14 +327,25 @@ async def lookup_field_list(env_name):
     """Get the list of available fields"""
     cfg = config.AppConfig()
 
-    #  TODO: Temporary workaround - change
+    #  Default
     if env_name == 'abc':
         env_name = cfg.default_environment
 
-    field_list = indexer.get_filters(cfg.index_db, env_name)
-    field_list = [x['value'] for x in field_list]
+     # Build list in format required for dropdowns
+    field_data = indexer.get_filters(cfg.index_db, env_name)
+    field_list = []
+    for x in field_data:
+        item = dict(
+            key=x['value'],
+            text=x['value'],
+            value=x['value']
+        )
+        field_list.append(item)
+
+    # JSON encode
     field_list_json = json.dumps(field_list).encode('utf-8')
 
+    # Return
     return Response(
         field_list_json,
         status=200,
@@ -318,7 +353,7 @@ async def lookup_field_list(env_name):
     )
 
 
-@app.route('/index/', methods=['GET'])
+@ app.route('/index/', methods=['GET'])
 async def index_read():
     """Get the index"""
     cfg = config.AppConfig()
@@ -452,9 +487,9 @@ async def get_polyroi_summary():
         {
             'env_name': 'MY_ENV_NAME',
             'filters': [
-                {'filter_name': 'file.Chain', 'filter_value': 'Heavy' ],
-                {'filter_name': 'file.BSource', 'filter_value': 'PBMC'],
-                ['filter_name': 'record.v', 'filter_value': 'IGHV3-7*02']
+                {'filter_name': 'f.Chain', 'filter_value': 'Heavy' ],
+                {'filter_name': 'f.BSource', 'filter_value': 'PBMC'],
+                ['filter_name': 'r.v', 'filter_value': 'IGHV3-7*02']
             ]
         }
         ```
@@ -493,16 +528,10 @@ async def get_polyroi_summary():
     env_config = cfg.get_env_config(env_name)
     cdr3_field = env_config['application']['cdr3_field']
     redundancy_field = env_config['application']['redundancy_field']
-    numbered_seq_field = env_config['application']['numbered_seq_field']
+    seq_logo_cfgs = env_config['application']['seq_logos']
     v_field = env_config['application']['v_field']
     d_field = env_config['application']['d_field']
     j_field = env_config['application']['j_field']
-
-    # Define regions to use for the sequence logos
-    # TODO: Make configurable. 
-    # NOTE: Region should not contain chain letter ('cdr1' not 'cdrh1').
-    #regions = env_config['anchor']['regions']
-    regions = ['cdr1', 'cdr2', 'cdr3', 'cdr1-2']
 
     async def async_generator():
 
@@ -545,18 +574,21 @@ async def get_polyroi_summary():
         t.add('Region coordinates finished.')
 
         # Build field list to load
-        # Filter out 'None'
         field_list = [
             cdr3_field,
             redundancy_field,
-            # numbered_seq_field, # Temporarily removed, slow to load (large amount of data)
             v_field,
             d_field,
             j_field,
-            'seq_gapped_cdr1',  # TODO: Make configurable
-            'seq_gapped_cdr2',
-            'seq_gapped_cdr3'
         ]
+
+        # Add on seq logo gapped fields
+        seq_logo_gapped_fields = [
+            x['gapped_field'] for x in seq_logo_cfgs
+        ]
+        field_list.extend(seq_logo_gapped_fields)
+
+        # Filter out any 'None' settings
         field_list = [x for x in field_list if x is not None]
 
         # Load the report data
@@ -577,18 +609,18 @@ async def get_polyroi_summary():
 
         # Add on cdr1-2 concatenated gapped sequence
         # TODO: Remove if no longer required
-        df_records['seq_gapped_cdr1-2'] = df_records.apply(
-            lambda row: row['seq_gapped_cdr1'] + row['seq_gapped_cdr2'],
-            axis='columns'
-        )
-        t.add('Added cdr1-2 concatenated field.')
+        # df_records['seq_gapped_cdr1-2'] = df_records.apply(
+        #    lambda row: row['seq_gapped_cdr1'] + row['seq_gapped_cdr2'],
+        #    axis='columns'
+        # )
+        #t.add('Added cdr1-2 concatenated field.')
 
         # Create the report
         report = reporting.get_summary_report(
             df_records=df_records,
-            regions=regions,
             facet_row_value=facet_row_value,
             facet_col_value=facet_col_value,
+            seq_logo_cfgs = seq_logo_cfgs,
             cdr3_field=cdr3_field,
             redundancy_field=redundancy_field,
             v_field=v_field,
@@ -646,18 +678,25 @@ async def query_data():
         global class_rgb
         global data_repo
         global scaler_xy
-        global v_group_le
-        global num_classes
+
+        # Init
+        t = Timing()
 
         # Run the query and get the report
         df, report = data_repo.run_coords_query(
             cfg=cfg,
             query=query,
             scaler_xy=scaler_xy,
-            value2_le=v_group_le)
+            t=t,
+            value2_cat_supported=len(class_rgb))
 
         # Return the report (but not the dataset, leave cached)
         report_json = json.dumps(report).encode('utf-8')
+
+        # Show timing information
+        if cfg.tile_debug:
+            print(json.dumps(t, default=vars, indent=2, sort_keys=True))
+
         yield report_json
 
     return async_generator(), \
@@ -683,10 +722,11 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
     global request_ctr
     global class_rgb
     global scaler_xy
-    global v_group_le
     global num_classes
     query: models.RepoQuery  # = None
     request_ctr += 1
+    t = Timing()
+    t.add('get_tile_image() requested.', request.args)
     # print('Request ' + str(request_ctr))
     # print (str(request.args))
 
@@ -725,7 +765,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         # environment is not selected
         # (e.g. first time application is loaded)
         if 'env_name' not in query_d:
-            with open(os.path.join(os.path.dirname(__file__),'tile_placeholder.png'), 'rb') as f:
+            with open(os.path.join(os.path.dirname(__file__), 'tile_placeholder.png'), 'rb') as f:
                 imgbuf = io.BytesIO(f.read())
             return imgbuf, 200, {'content-type': 'image/png'}
 
@@ -752,7 +792,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
     if 'kderm' in request.args:
         kde_rel_mode = KDERelativeMode[request.args['kderm']]
     else:
-        #kde_rel_mode = KDERelativeMode.SINGLE
+        # kde_rel_mode = KDERelativeMode.SINGLE
         #  TODO: Change back, or add NONE to KDERelativeSelection (1-1 = 0)
         kde_rel_mode = KDERelativeMode.ALL
 
@@ -802,6 +842,13 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
     # Round to integer (required for tile binning)
     num_bins = int(round(num_bins))
 
+    # Heatmap/Binned layer color field.
+    # If not supplied, use class column from config.
+    if 'colorfield' in request.args:
+        color_field = request.args['colorfield'].strip()
+    else:
+        color_field = cfg.column_class
+
     # TODO: Tidy / move
     # Leaflet CRS.Simple workaround:
     # Translate tile Y coordinate
@@ -818,6 +865,8 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         # tile_mask = tile.TileHelper.get_circle_mask(ts.tile_size, num_bins)
         tile_mask = None
 
+    t.add('Initialisation finished.')
+
     # Run the query and get the sequence data.
     # (this data will typically be pre-cached by the query engine due to the
     # original user request).
@@ -828,10 +877,13 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         cfg=cfg,
         query=query.to_dict(),
         scaler_xy=scaler_xy,
-        value2_le=v_group_le,
         split_by_facet=True,
-        allow_cached_report=True
+        allow_cached_report=True,
+        t=None,
+        # Show error if num categories exceeds number of colours.
+        value2_cat_supported=len(class_rgb)
     )
+    t.add('Dataset loaded.')
 
     # Get query hash from the report
     query_hash = report['query_hash']
@@ -853,6 +905,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         value2_min=0.,  # not used
         value2_max=0.,  # not used
         num_bins=num_bins,
+        color_field=color_field,
         kdebrightness=kdebrightness,
         kdebw=kdebw,
         kde_colormap=kde_colormap,
@@ -862,6 +915,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         kde_rel_row_name=kde_rel_row_name,
         kde_rel_col_name=kde_rel_col_name
     )
+    t.add('Tile request created.')
 
     async def async_generator():
 
@@ -871,6 +925,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
             tile_request.facet_row_value,
             tile_request.facet_col_value
         )]
+        t.add('Facet data selected.')
 
         # Default to False
         invert_values = False
@@ -889,10 +944,13 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
                 world_y=cfg.column_plot_y,
                 world_value=cfg.column_value
             )
+            t.add('KDE Tileset loaded from KDE Manager.',
+                  {'tileset_cached': tileset_cached})
 
             # Get the KDEItem from the KDETileSet
             kde_items_d = kde_tileset.kde_items
             kde_item = kde_items_d[(facet_row_value, facet_col_value)]
+            t.add('KDE Item extracted from Tileset.')
 
             # Get the min-max ranges
             if not kde_tileset.kde_diff_similar_minmax_computed:
@@ -908,6 +966,7 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
             else:
                 raise Exception(
                     f'Unexpected tile type: {tile_request.tile_type}')
+            t.add('Min-max range obtained.')
 
             # Produce an image from the kde matrix values
             # TODO: Cache min/max?
@@ -921,10 +980,12 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
                 invert_values=tile_request.kde_colormap_invert,
                 cmap=tile_request.kde_colormap
             )
+            t.add('KDE image created.')
 
             # Convert to RGBA
             # (previously needed alpha channel for compositing)
             im = im_kde.convert('RGBA')
+            t.add('KDE converted to RGBA.')
 
         # Get 2D histogram / binned image
         elif tile_request.tile_type == 'BINNED':
@@ -934,11 +995,10 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
                 tile_request=tile_request,
                 df_facet=df_facet,
                 cfg=cfg,
-                num_bins=tile_request.num_bins,
                 num_classes=num_classes,
-                class_rgb=class_rgb
+                class_rgb=class_rgb,
+                t=t
             )
-
         else:
             raise ValueError(f'Unexpected tile_type: {tile_type}')
 
@@ -946,6 +1006,9 @@ async def get_tile_image(tile_type: str, zoom: int = 0, x: int = 0, y: int = 0):
         # im.save('my_image.png', format='png')
         with io.BytesIO() as output:
             im.save(output, format='PNG')
+            t.add('Tile image written (BytesIO).')
+            if cfg.tile_debug:
+                print(json.dumps(t, default=vars, indent=2, sort_keys=True))
             yield output.getvalue()
 
     return async_generator(), 200, {'content-type': 'image/png'}
@@ -985,28 +1048,52 @@ def get_xy_scaler() -> MinMaxScaler:
 
 
 # %% Main
+# if __name__ == '__main__':
+
+
+# Init
+print("Initialising...")
+scaler_xy = get_xy_scaler()
+data_repo = DataRepo(cfg)
+tile_helper = TileHelper()
+# TODO: make dynamic from categorical values
+# v_groups = [f'IGHV{i+1}' for i in range(8)]
+# v_groups.extend([f'IGLV{i+1}' for i in range(8)])
+# v_group_le = LabelEncoder().fit(v_groups)
+
+# Get colours for label encodings (list of RGB tuples)
+# print("Getting colours...")
+# num_classes = len(v_group_le.classes_)
+# v_group_rgb = sns.mpl_palette("Set2", num_classes, as_cmap=False)
+# class_rgb = np.array(v_group_rgb)
+# ts, class_rgb, df = init_test_card()
+
+# class_rgb = np.array(sns.mpl_palette("Set2", 8, as_cmap=False))
+
+# Qualitative colours from colorbrewer2.org
+class_rgb = np.array([
+    (166, 206, 227),
+    (31, 120, 180),
+    (178, 223, 138),
+    (51, 160, 44),
+    (251, 154, 153),
+    (227, 26, 28),
+    (253, 191, 111),
+    (255, 127, 0),
+    (202, 178, 214)
+])
+
+# Need between 0.0 and 1.0
+class_rgb = class_rgb / 255.0
+num_classes = len(class_rgb)
+
+print("Initialised")
+
+# Start the server
+from werkzeug.middleware.profiler import ProfilerMiddleware
+# app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5], profile_dir='./profile')
+
 if __name__ == '__main__':
-
-    # Init
-    print("Initialising...")
-    scaler_xy = get_xy_scaler()
-    data_repo = DataRepo(cfg)
-    tile_helper = TileHelper()
-    # TODO: make dynamic from categorical values
-    v_groups = [f'IGHV{i+1}' for i in range(8)]
-    #v_groups.extend([f'IGLV{i+1}' for i in range(8)])
-    v_group_le = LabelEncoder().fit(v_groups)
-
-    # Get colours for label encodings (list of RGB tuples)
-    print("Getting colours...")
-    num_classes = len(v_group_le.classes_)
-    v_group_rgb = sns.mpl_palette("Set2", num_classes, as_cmap=False)
-    class_rgb = np.array(v_group_rgb)
-    # ts, class_rgb, df = init_test_card()
-    print("Initialised")
-
-    # Start the server
-    from werkzeug.middleware.profiler import ProfilerMiddleware
-    # app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[5], profile_dir='./profile')
     # app.run(debug=True)
-    app.run(debug=False)  # , host='0.0.0.0')
+    # app.run(debug=False)  # , host='0.0.0.0')
+    app.run(debug=False, host='0.0.0.0')

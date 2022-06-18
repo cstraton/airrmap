@@ -4,29 +4,19 @@
 # tests -> test_reporting.py
 
 # %%
-import logomaker
-import itertools
-import unittest
 import pandas as pd
-import base64
-import json
-import re
-import io
-from sklearn.preprocessing import LabelEncoder
-from pandarallel import pandarallel
-from typing import Any, Dict, List, Optional, Sequence, Union
+from joblib import Parallel, delayed
+from typing import Any, Dict, List, Optional
 
 from airrmap.shared import models
 from airrmap.shared.timing import Timing
-from airrmap.application.config import AppConfig
-from airrmap.application.repo import DataRepo
 import airrmap.application.seqlogo as seqlogo
 
 
 def get_summary_report(df_records: pd.DataFrame,
-                       regions: Sequence,
                        facet_row_value: str,
                        facet_col_value: str,
+                       seq_logo_cfgs: Optional[List[Dict[str, Any]]] = None,
                        cdr3_field: Optional[str] = None,
                        redundancy_field: Optional[str] = None,
                        v_field: Optional[str] = None,
@@ -42,15 +32,18 @@ def get_summary_report(df_records: pd.DataFrame,
     df_records: pd.DataFrame
         The pre-filtered records for the selected region.
 
-    regions: Sequence
-        Regions to extract for sequence-related reports excluding
-        the chain (e.g. 'cdr1', 'fw1').
-
     facet_row_value: str
         Value of the selected facet, or '' if not selected.
 
     facet_col_value: str
         Value of the selected facet, or '' if not selected.
+
+    seq_logo_cfgs: List[Dict[str, Any]] (optional)
+        List of sequence logo configuration dictionaries.
+        Each dictionary should contain (at a minimum):
+            title: The title for the sequence logo in the report.
+            gapped_field: The column containing the gapped sequence.
+        Default is None.
 
     cdr3_field: str (optional)
         Name of the field in df_records containing the cdr3 amino acid sequence.
@@ -91,19 +84,22 @@ def get_summary_report(df_records: pd.DataFrame,
     # Init
     result = dict(logo='',
                   seqs={0: 'No sequences found.'})
-    regions = [] if regions is None else regions
+    seq_logo_cfgs = [] if seq_logo_cfgs is None else seq_logo_cfgs
 
     #
     # --- Enrichment and transformation ---
     #
 
     # Compute CDR3 length
-    cdr3len_field = '_cdr3_len'
-    df_records[cdr3len_field] = df_records[cdr3_field].apply(
-        len
-    ).astype('uint16')
-
-    t.add('Enrichment finished.')
+    if cdr3_field is None:
+        cdr3len_field = None
+    else:
+        cdr3len_field = '_cdr3_len'
+        df_records[cdr3len_field] = df_records[cdr3_field].apply(
+            len
+        ).astype('uint16')
+    t.add('Enrichment finished.', meta={"cdr3_field": cdr3_field})
+    
 
     #
     # --- Produce the report ---
@@ -168,47 +164,18 @@ def get_summary_report(df_records: pd.DataFrame,
 
         # Get the sequence logo and example sequences
         logo_items = []
-        seqs_top = []
-        seqs_bottom = []
-        seqs_unique_count = 0
-        for region in regions:
 
-            logo_item = {}
-            gapped_field = f'seq_gapped_{region.lower()}'
-
-            # De-duplicate seqs and sum redundancy
-            # TODO: Make configurable
-            df_grouped_region = df_records.groupby(
-                [gapped_field])[redundancy_field].sum().reset_index()
-            seqs_top = df_grouped_region.nlargest(
-                5, redundancy_field).values.tolist()
-            seqs_bottom = df_grouped_region.nsmallest(
-                5, redundancy_field).values.tolist()
-
-            # Squeeze gapped sequence (remove excess gaps)
-            # if region == 'cdr3':
-            seqs_top = squeeze_gapped_seqs(seqs_top, min_gap_chars=0)
-            seqs_bottom = squeeze_gapped_seqs(seqs_bottom, min_gap_chars=0)
-
-            # Add rest of gapped seqs data to report
-            seqs_unique_count = len(df_grouped_region.index)
-            logo_item['seqs_top'] = seqs_top  # type: ignore
-            logo_item['seqs_bottom'] = seqs_bottom  # type: ignore
-            logo_item['seqs_unique_count'] = seqs_unique_count  # type: ignore
-            logo_item['region_name'] = region.upper()
-
-            # Create logo
-            logo, df_logo_counts = seqlogo.get_logo(
-                gapped_seqs=df_records[gapped_field].values,
-                weights=df_records[redundancy_field].values,
-                title='',  # region.upper(),
-                encode_base64=True,
-                image_format='png')
-            logo_item['logo_img'] = logo
-
-            # Add to list
-            logo_items.append(logo_item)
-
+        # n_jobs=-1: all cpus, n_jobs=1, single cpu (useful for debugging)
+        logo_items = Parallel(n_jobs=-1)(
+            delayed(build_seq_logo)
+            (
+                logo_cfg['title'],
+                logo_cfg['gapped_field'],
+                df_records,
+                redundancy_field
+            )
+            for logo_cfg in seq_logo_cfgs
+        )
         result['logo'] = logo_items
         t.add('Sequence logo finished.')
 
@@ -216,6 +183,75 @@ def get_summary_report(df_records: pd.DataFrame,
 
     # Result
     return result
+
+
+def build_seq_logo(title: str,
+                   gapped_field: str,
+                   df_records: pd.DataFrame,
+                   redundancy_field: str):
+    """
+    Generate a sequence logo.
+
+    Parameters
+    ----------
+    gapped_field : str
+        Column containing the gapped sequence.
+
+    title : str
+        Title for the logo (e.g. CDR3).
+
+    df_records : pd.DataFrame
+        The pre-filtered records for the selected region.
+
+    redundancy_field : str
+        Column containing the sequence redundancy (number of instances
+        of a particular sequence).
+
+    Returns
+    -------
+    Dict
+        Logo dictionary, containing the logo image
+        and associated metadata.
+    """
+
+    # Init
+    seqs_top = []
+    seqs_bottom = []
+    seqs_unique_count = 0
+
+    # De-duplicate seqs and sum redundancy
+    # TODO: Make top/bottom 5 configurable
+    df_grouped_region = df_records.groupby(
+        [gapped_field])[redundancy_field].sum().reset_index()
+    seqs_top = df_grouped_region.nlargest(
+        5, redundancy_field).values.tolist()
+    seqs_bottom = df_grouped_region.nsmallest(
+        5, redundancy_field).values.tolist()
+
+    # Squeeze gapped sequence (remove excess gaps)
+    seqs_top = squeeze_gapped_seqs(seqs_top, min_gap_chars=0)
+    seqs_bottom = squeeze_gapped_seqs(seqs_bottom, min_gap_chars=0)
+
+    # Add rest of gapped seqs data to report
+    seqs_unique_count = len(df_grouped_region.index)
+    logo_item = dict(
+        seqs_top=seqs_top,  # type: ignore
+        seqs_bottom=seqs_bottom,  # type: ignore
+        seqs_unique_count=seqs_unique_count,  # type: ignore
+        region_name=title
+    )
+
+    # Create logo
+    logo, df_logo_counts = seqlogo.get_logo(
+        gapped_seqs=df_records[gapped_field].values,
+        weights=df_records[redundancy_field].values,
+        title='',  # render client side using logo_item.region_name
+        encode_base64=True,
+        image_format='png')
+    logo_item['logo_img'] = logo
+
+    # Return
+    return logo_item
 
 
 def get_report_info(df_records: pd.DataFrame,
@@ -492,10 +528,3 @@ def squeeze_gapped_seqs(gapped_seq_list: List[List], min_gap_chars=2, gap_char='
 
     else:
         return gapped_seq_list
-
-
-# Initialisation
-pandarallel.initialize(
-    use_memory_fs=None,  # auto
-    progress_bar=False
-)

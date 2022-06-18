@@ -172,6 +172,7 @@ function ROIReport({ report, facetRowValues, facetColValues, setAppStatus }) {
               />
             </Tab.Pane>
         },
+        /*
         {
           // Sequences
           menuItem: { key: 'sequences', content: 'Sequences' },
@@ -180,6 +181,7 @@ function ROIReport({ report, facetRowValues, facetColValues, setAppStatus }) {
               <SeqsRender />
             </Tab.Pane>
         },
+        */
         {
           // Logo
           menuItem: { key: 'seqlogo', content: 'Logos' },

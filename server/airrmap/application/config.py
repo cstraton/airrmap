@@ -14,7 +14,7 @@ class SeqFileType(Enum):
 class AppConfig():
 
     # TODO: Change default path
-    def __init__(self, fn_config: str = r'/workspaces/SpatialMap/server/config.yaml'):
+    def __init__(self, fn_config: str = r'/airrmap-data/appconfig.yaml'):
         """
         Initialise and load configuration file.
 
@@ -23,10 +23,11 @@ class AppConfig():
         fn_config : str, optional
             File path to config file, by default ''.
             If no path supplied, looks for
-            config.yaml.
+            appconfig.yaml.
         """
         self.base_path: str = ''
         self.index_db: str = ''
+        self.oas_list: str = '' # OAS Data Unit listing
         self.default_environment: str = ''
         self.tile_debug: bool = False
         self.loaded: bool = False
@@ -51,6 +52,7 @@ class AppConfig():
             config = yaml.load(f, Loader=yaml.FullLoader)
             self.base_path = config['base_path']
             self.index_db = os.path.join(self.base_path, config['index_db'])
+            self.oas_list = os.path.join(self.base_path, 'oas_listing.csv')
             self.default_environment = config['default_environment']
             self.tile_debug = config['tile_debug']
 

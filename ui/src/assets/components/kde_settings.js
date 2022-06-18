@@ -2,11 +2,9 @@
 // KDE settings pane (dropdowns and sliders)
 
 import React, { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { Button, Checkbox, Dropdown, Form, Header, Icon, Input, Ref, Segment, Select } from 'semantic-ui-react'
-import LookupList from './lookup_list'
-import SliderControl from './slider_control'
+import { Checkbox, Divider, Dropdown, Form, Grid, Header, Icon, Label } from 'semantic-ui-react'
 import { Slider } from 'react-semantic-ui-range'
+import usePersistedState from "../../assets/components/persisted_state"
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import './css/filter_selection.css';
 import '../../index.css';
@@ -14,6 +12,10 @@ import CONFIG from '../../../config.json';
 
 
 function KDESettings({
+  binnedEnabled, setBinnedEnabled,
+  brightness, setBrightness,
+  numBins, setNumBins,
+  kdeEnabled, setKdeEnabled,
   kdeBrightness, setKdeBrightness,
   kdeBandwidth, setKdeBandwidth,
   kdeColormap, setKdeColormap,
@@ -25,11 +27,33 @@ function KDESettings({
   facetRowValues, facetColValues }) {
 
   // State
-  const [kdeOptions, setKdeOptions] = useState(null);
+  const [kdeOptions, setKdeOptions] = usePersistedState(null);
+
+  // Num Bins Slider
+  const numBinsSlider = {
+    //start: 0,
+    min: 0,
+    max: 4,
+    step: 1,
+    onChange: value => {
+      setNumBins(value);
+    }
+  }
+
+  // Brightness slider settings
+  const brightnessSlider = {
+    //start: 0.0,
+    min: 0.0,
+    max: 200,
+    step: 2.0,
+    onChange: value => {
+      setBrightness(value);
+    }
+  };
 
   // KDE bandwidth slider settings
   const kdeBandwidthSliderSettings = {
-    start: kdeBandwidth,
+    //start: 0.0,
     min: 0.0,
     max: 2.0,
     step: 0.1,
@@ -40,7 +64,7 @@ function KDESettings({
 
   // KDE brightness slider settings
   const kdeBrightnessSliderSettings = {
-    start: kdeBrightness,
+    //start: 0.0,
     min: 0.0,
     max: 15.0,
     step: 0.1,
@@ -68,6 +92,59 @@ function KDESettings({
       );
   }, [])
 
+
+  function RenderHeatmapBinSize() {
+    /* Bin Count slider
+      NOTE: State handled by app.js and later passed to map URL. 
+            Don't register with React Hook Form;
+            keep separate as does not affect the
+            filtering of data and would invalidate the cache
+            if included in the form fields.
+    */
+    return (
+      <Grid columns={2} divided>
+        <Grid.Row>
+          <Grid.Column>
+            <Slider discrete
+              value={numBins}
+              color='blue'
+              settings={numBinsSlider}
+            />
+          </Grid.Column>
+          <Grid.Column>
+            <Label circular>{numBins}</Label>
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
+    );
+  }
+
+  function RenderHeatmapBrightness() {
+    /* Brightness slider 
+           NOTE: State handled by app.js and later passed to map URL. 
+                 Don't register with React Hook Form;
+                 keep separate as does not affect the
+                 filtering of data and would invalidate the cache
+                 if included in the form fields.
+       */
+    return (
+      <Grid columns={2} divided>
+        <Grid.Row>
+          <Grid.Column>
+            <Slider discrete
+              value={brightness}
+              color='blue'
+              settings={brightnessSlider}
+            />
+          </Grid.Column>
+          <Grid.Column>
+            <Label circular>{brightness}</Label>
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
+    );
+  }
+
   function RenderRelativeMode() {
 
     // Loading...
@@ -87,17 +164,20 @@ function KDESettings({
 
     // Render dropdown
     return (
-      <React.Fragment>
-        <Header as='h5'><Icon className={'bi bi-filter'} />Relative Mode</Header>
-        <Dropdown
-          placeholder='Select relative mode...'
-          fluid={false}
-          selection
-          options={relativeModeOptions}
-          onChange={(ev, data) => setKdeRelativeMode(data.value.toString())}
-          defaultValue={kdeRelativeMode}
-        />
-      </React.Fragment>
+      <Grid columns={2}>
+        <Grid.Row>
+          <Grid.Column>
+            <Dropdown
+              placeholder='Select relative mode...'
+              fluid={false}
+              selection
+              options={relativeModeOptions}
+              onChange={(ev, data) => setKdeRelativeMode(data.value.toString())}
+              defaultValue={kdeRelativeMode}
+            />
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
     );
   }
 
@@ -120,17 +200,20 @@ function KDESettings({
 
     // Render dropdown
     return (
-      <React.Fragment>
-        <Header as='h5'><Icon className={'bi bi-filter'} />Relative Selection</Header>
-        <Dropdown
-          placeholder='Select relative selection...'
-          fluid={false}
-          selection
-          options={relativeSelectionOptions}
-          onChange={(ev, data) => setKdeRelativeSelection(data.value.toString())}
-          defaultValue={kdeRelativeSelection}
-        />
-      </React.Fragment>
+      <Grid columns={2}>
+        <Grid.Row>
+          <Grid.Column>
+            <Dropdown
+              placeholder='Select relative selection...'
+              fluid={false}
+              selection
+              options={relativeSelectionOptions}
+              onChange={(ev, data) => setKdeRelativeSelection(data.value.toString())}
+              defaultValue={kdeRelativeSelection}
+            />
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
     );
   }
 
@@ -153,26 +236,29 @@ function KDESettings({
 
     // Render dropdown
     return (
-      <React.Fragment>
-        <Header as='h5'><Icon className={'bi bi-filter'} />Colour Map</Header>
-        <Form.Group>
-          <Dropdown
-            placeholder='Select colour map...'
-            fluid={false}
-            selection
-            options={colormapOptions}
-            onChange={(ev, data) => setKdeColormap(data.value.toString())}
-            defaultValue={kdeColormap}
-          />
-          <Checkbox
-            className='semantic-checkbox-adjust'
-            toggle
-            label='Invert'
-            onChange={(ev, data) => setKdeColormapInvert(data.checked)}
-            defaultChecked={kdeColormapInvert}
-          />
-        </Form.Group>
-      </React.Fragment>
+      <Grid columns={2}>
+        <Grid.Row>
+          <Grid.Column>
+            <Dropdown
+              placeholder='Select colour map...'
+              fluid={false}
+              selection
+              options={colormapOptions}
+              onChange={(ev, data) => setKdeColormap(data.value.toString())}
+              defaultValue={kdeColormap}
+            />
+          </Grid.Column>
+          <Grid.Column>
+            <Checkbox
+              className='semantic-checkbox-adjust'
+              toggle
+              label='Invert'
+              onChange={(ev, data) => setKdeColormapInvert(data.checked)}
+              defaultChecked={kdeColormapInvert}
+            />
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
     );
   }
 
@@ -199,17 +285,20 @@ function KDESettings({
 
     // Render dropdown
     return (
-      <React.Fragment>
-        <Header as='h5'><Icon className={'bi bi-filter'} />Row Value</Header>
-        <Dropdown
-          placeholder='Select row value...'
-          fluid={false}
-          selection
-          options={facetRowOptions}
-          onChange={(ev, data) => setKdeRowName(data.value.toString())}
-          defaultValue={kdeRowName}
-        />
-      </React.Fragment>
+      <Grid columns={2}>
+        <Grid.Row>
+          <Grid.Column>
+            <Dropdown
+              placeholder='Select row value...'
+              fluid={false}
+              selection
+              options={facetRowOptions}
+              onChange={(ev, data) => setKdeRowName(data.value.toString())}
+              defaultValue={kdeRowName}
+            />
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
     );
   }
 
@@ -236,83 +325,148 @@ function KDESettings({
 
     // Render dropdown
     return (
-      <React.Fragment>
-        <Header as='h5'><Icon className={'bi bi-filter'} />Column Value</Header>
-        <Dropdown
-          placeholder='Select column value...'
-          fluid={false}
-          selection
-          options={facetColOptions}
-          onChange={(ev, data) => setKdeColumnName(data.value.toString())}
-          defaultValue={kdeColumnName}
-        />
-      </React.Fragment>
+      <Grid columns={2}>
+        <Grid.Row>
+          <Grid.Column>
+            <Dropdown
+              placeholder='Select column value...'
+              fluid={false}
+              selection
+              options={facetColOptions}
+              onChange={(ev, data) => setKdeColumnName(data.value.toString())}
+              defaultValue={kdeColumnName}
+            />
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
     );
   }
 
   function RenderKDESize() {
+    /* KDE kernel bandwidth slider
+           NOTE: State handled by app.js and later passed to map URL. 
+                 Don't register with React Hook Form;
+                 keep separate as does not affect the
+                 filtering of data and would invalidate the cache
+                 if included in the form fields.
+     */
     return (
-      <React.Fragment>
-        {/* KDE kernel bandwidth slider
-            NOTE: State handled by app.js and later passed to map URL. 
-                  Don't register with React Hook Form;
-                  keep separate as does not affect the
-                  filtering of data and would invalidate the cache
-                  if included in the form fields.
-        */}
-        <Header as='h5'><Icon className={'bi bi-code'} />KDE Bandwidth</Header>
-        <Slider
-          value={kdeBandwidth}
-          color='blue'
-          settings={kdeBandwidthSliderSettings}
-        />
-      </React.Fragment>
+      <Grid columns={2} divided >
+        <Grid.Row>
+          <Grid.Column>
+            <Slider
+              value={kdeBandwidth}
+              color='blue'
+              settings={kdeBandwidthSliderSettings}
+            />
+          </Grid.Column>
+          <Grid.Column>
+            <Label circular>{kdeBandwidth.toFixed(1)}</Label>
+          </Grid.Column>
+        </Grid.Row>
+      </Grid >
     );
   }
 
   function RenderKDEBrightness() {
+    /* KDE kernel brightness slider
+       NOTE: State handled by app.js and later passed to map URL. 
+             Don't register with React Hook Form;
+             keep separate as does not affect the
+             filtering of data and would invalidate the cache
+             if included in the form fields.
+   */
     return (
-      <React.Fragment>
-        {/* KDE kernel brightness slider
-            NOTE: State handled by app.js and later passed to map URL. 
-                  Don't register with React Hook Form;
-                  keep separate as does not affect the
-                  filtering of data and would invalidate the cache
-                  if included in the form fields.
-        */}
-        <Header as='h5'><Icon className={kdeBrightness == 1.0 ? 'bi bi-lightbulb-off' : 'bi bi-lightbulb'} />KDE Brightness</Header>
-        <Slider
-          value={kdeBrightness}
-          color={'blue'}
-          settings={kdeBrightnessSliderSettings}
-        />
-      </React.Fragment>
+      <Grid columns={2} divided>
+        <Grid.Row>
+          <Grid.Column>
+            <Slider
+              value={kdeBrightness}
+              color={'blue'}
+              settings={kdeBrightnessSliderSettings}
+            />
+          </Grid.Column>
+          <Grid.Column>
+            <Label circular>{kdeBrightness.toFixed(1)}</Label>
+          </Grid.Column>
+        </Grid.Row>
+      </Grid>
     );
   }
 
   function renderLayout() {
     return (
       <div>
-        <Form size={'small'}>
+        <Form>
 
+          {/* --- HEATMAP SETTINGS --- */}
+          <Divider horizontal>
+            <Header as='h4'>
+              <Icon
+                color={binnedEnabled ? 'green' : 'grey'}
+                link
+                circular
+                size='small'
+                className={'power'}
+                onClick={() => setBinnedEnabled(!binnedEnabled)}
+              />
+              Heatmap
+            </Header>
+          </Divider>
           {/* Need to call as function, otherwise slider doesn't slide..? */}
-          {RenderKDEBrightness()}
-          {RenderKDESize()}
-          {/*
-          <RenderKDESize 
-            kdeBandwidth = {kdeBandwidth}
-            setKdeBandwidth = {setKdeBandwidth}
-          />
-          <RenderKDEBrightness
-            kdeBrightness = {kdeBrightness}
-            setKdeBrightness = {setKdeBrightness}
-          />
-          */}
-          <RenderColormapSelection />
-          <RenderRelativeMode />
-          <RenderRelativeSelection />
-          <RenderRowName />
-          <RenderColumnName />
+          <Form.Field>
+            <label>Brightness</label>
+            {RenderHeatmapBrightness()}
+          </Form.Field>
+          <Form.Field>
+            <label>Bin size</label>
+            {RenderHeatmapBinSize()}
+          </Form.Field>
+          <p><br /></p>
+
+          {/* --- KDE SETTINGS --- */}
+          <Divider horizontal color='green'>
+            <Header as='h4'>
+              <Icon
+                color={kdeEnabled ? 'green' : 'grey'}
+                link
+                circular
+                size="small"
+                className={'power'}
+                onClick={() => setKdeEnabled(!kdeEnabled)}
+              />
+              KDE
+            </Header>
+          </Divider>
+          {/* Need to call as function, otherwise slider doesn't slide..? */}
+          <Form.Field>
+            <label>Brightness</label>
+            {RenderKDEBrightness()}
+          </Form.Field>
+          <Form.Field>
+            <label>Bandwidth</label>
+            {RenderKDESize()}
+          </Form.Field>
+          <Form.Field>
+            <label>Colour map</label>
+            <RenderColormapSelection />
+          </Form.Field>
+          <Form.Field>
+            <label>Relative mode</label>
+            <RenderRelativeMode />
+          </Form.Field>
+          <Form.Field>
+            <label>Relative selection</label>
+            <RenderRelativeSelection />
+          </Form.Field>
+          <Form.Field>
+            <label>Row value</label>
+            <RenderRowName />
+          </Form.Field>
+          <Form.Field>
+            <label>Column value</label>
+            <RenderColumnName />
+          </Form.Field>
         </Form>
       </div>
     );

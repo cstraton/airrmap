@@ -3,7 +3,7 @@
 # NOTE! Remember to reflect any schema changes in config.py.
 
 version: 1
-base_path: /workspaces/SpatialMap/tests/resource/  # Changed to tests path.
+base_path: /workspaces/airrmap/server/tests/resource/  # Changed to tests path.
 index_db: index.db
 default_environment: test_env
 tile_debug: false # Show debug information on rendered tiles.

@@ -14,3 +14,9 @@
 
 }
 
+/* Autosize grid to container */
+/* REF: https://community.plotly.com/t/plot-sizing-problems/1620/25 */
+.js-plotly-plot,
+.plot-container {
+          height: 55vh
+}

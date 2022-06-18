@@ -128,7 +128,7 @@ def read_seq_meta(env_name: str,
     # Add env name and filename
     df.insert(0, 'env_name', env_name)
     df.insert(1, 'file_name', file_name)
-    df.insert(2, 'property_level', 'file')
+    df.insert(2, 'property_level', 'f') # 'file' level
     df.insert(4, 'property_type', 'TEXT')
 
     # Return
@@ -165,7 +165,7 @@ def read_seq_recordcols(env_name: str,
         record = dict(
             env_name=env_name,
             file_name=file_name,
-            property_level='record',
+            property_level='r', # 'record' level
             property_name=field_name,
             property_type=field_type,
             property_value=''
@@ -211,6 +211,7 @@ def get_index(fn_indexdb: str) -> Dict:
 def get_env_list(fn_indexdb: str) -> List:
     """Get the list of environments and details"""
 
+    # Get file-level ('f') records
     sql_select = """
         SELECT      MIN(env_name) as env_name,
                     COUNT(DISTINCT file_name) AS total_file_count,
@@ -219,7 +220,7 @@ def get_env_list(fn_indexdb: str) -> List:
                     MAX(CASE WHEN property_name='sys_processed_utc' THEN property_value ELSE  '' END) AS last_processed_utc
 
         FROM        env_index
-        WHERE       property_level = 'file'
+        WHERE       property_level = 'f'
         GROUP BY    env_name
         ORDER BY    env_name
     """
@@ -260,7 +261,8 @@ def get_filter_item(fn_indexdb: str,
         Environment name.
 
     filter_name : str
-        Filter name, e.g. record.v
+        Filter name, e.g. 'f.field1' (f=file level) or
+            'r.field2' (r=record level)
 
     Returns
     -------

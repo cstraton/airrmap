@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.158.0/containers/python-3
 {
-	"name": "Python 3",
+	"name": "Python 3 and Node.js",
 	"build": {
 		"dockerfile": "Dockerfile",
 		"context": "..",
@@ -9,8 +9,9 @@
 			// Update 'VARIANT' to pick a Python version: 3, 3.6, 3.7, 3.8, 3.9
 			"VARIANT": "3.8",
 			// Options
-			"INSTALL_NODE": "false",
-			"NODE_VERSION": "lts/*"
+			"INSTALL_NODE": "true",
+			//"NODE_VERSION": "lts/*"
+			"NODE_VERSION": "14"
 		}
 	},
 	// Set *default* container specific settings.json values on container create.
@@ -34,6 +35,7 @@
 	},
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
+		"dbaeumer.vscode-eslint",
 		"ms-python.python",
 		"njpwerner.autodocstring",
 		"ms-toolsai.jupyter",
@@ -43,6 +45,7 @@
 	],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [
+		1234,
 		5000,
 		5500
 	],
@@ -65,8 +68,11 @@
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// NOTE: Uncomment top line to download fixed ANARCI version (fd2f694), which also downloads latest IMGT reference sequences.
 	// 		Installs this package (airrmap) in edit mode.
+	// NOTE: If changing this, consider updating Dockerfile in root and .devcontainer/Dockerfile
+	//		 Most pip installs are managed in .devcontainer/Dockerfile as a cached layer (avoids reinstalling all pip packages when rebuilding container if no changes to requirements.txt)
 	//"postCreateCommand": "pip3 install --user -r requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && sudo apt-get -y install hmmer && sudo git clone https://github.com/oxpig/ANARCI.git ${containerWorkspaceFolder}/anarci && cd ${containerWorkspaceFolder}/anarci/ && sudo git reset --hard fd2f694 && sudo python ${containerWorkspaceFolder}/anarci/setup.py install && cd /workspaces/SpatialMap/ && pip install -e .",
-	"postCreateCommand": "pip3 install --user -r requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && cd /workspaces/SpatialMap/ && pip install -e .",
+	//"postCreateCommand": "pip3 install --user -r server/requirements.txt && sudo apt-get update && sudo apt-get install sqlite3 && pip install -e ${containerWorkspaceFolder}/server && npm install -g npm@7.24.0 && npm install -g parcel@2.0.0-rc.0 && npm install -g gulp@4.0.2 && cd ${containerWorkspaceFolder}/ui npm i",
+	"postCreateCommand": "pip install -e ${containerWorkspaceFolder}/server && npm install -g npm@7.24.0 && npm install -g parcel@2.0.0-rc.0 && npm install -g gulp@4.0.2 && cd ${containerWorkspaceFolder}/ui npm i",
 
 	// Use 'postStartCommand' to run commands when the container starts.
 	//"postStartCommand": "sudo chmod 777 /workspaces/SpatialMap/data/ram/",

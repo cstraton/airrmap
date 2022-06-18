@@ -27,9 +27,10 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import airrmap.shared.analysis_helper as ah
 import airrmap.preprocessing.imgt as imgt
+import airrmap.preprocessing.anchors as anchors
 import airrmap.preprocessing.distance as distance
 from airrmap.application.config import AppConfig, SeqFileType
-from airrmap.preprocessing.oas_adapter_base import OASAdapterBase, AnchorItem
+from airrmap.preprocessing.seq_adapter_base import SeqAdapterBase, AnchorItem
 
 
 # %% --- SET CONFIG HERE ---
@@ -53,7 +54,6 @@ distance_measure_name = 'measure_distance_lev1'  # 'measure_distance3'
 distance_measure_func = getattr(distance, distance_measure_name)
 distance_measure_kwargs: Dict = {}  # dict(regions=['cdrh1', 'cdrh2'])
 reduction_method = 'MDS'  # 'UMAP' 'MDS'
-convert_json = False  # True
 def anchor_seq_transform(x): return x  # json.loads
 def seq_transform(x): return x  # json.loads
 
@@ -158,17 +158,16 @@ def get_coords_using_reduction(
     """
 
     # Build distance matrix
-    df_dist_matrix = imgt.build_distance_matrix(
-        df=df_seqs,
+    # (Leave triangle inequality test as already tested)
+    df_dist_matrix = distance.create_distance_matrix(
+        records=df_seqs,
         distance_function=distance_measure_func,
-        measure_value=seq_field,
-        # Set to 10 for performance, tested already using this method.
-        triangle_inequality_samples=10,
+        measure_value =seq_field,
         **distance_measure_kwargs
     )
 
     # Compute the coords and distances
-    df_coords, df_dist = imgt.compute_coords(
+    df_coords, df_dist = anchors.compute_coords(
         df_dist_matrix=df_dist_matrix,
         method=reduction_method,
         random_state=random_state)
@@ -185,7 +184,6 @@ def get_coords_using_mlat(
         num_closest_anchors: int,
         distance_measure_name: str,
         distance_measure_kwargs: Dict,
-        convert_json: Union[bool, int],
         use_mae: bool):
     """
     Compute the coordinates for given sequeunces using multilateration.
@@ -210,11 +208,6 @@ def get_coords_using_mlat(
     distance_measure_kwargs : Dict
         Any arguments for the distance measure.
 
-    convert_json : Union[bool, int]
-        Whether the sequence must be converted from json.
-        True or 1 for standard double-quoted JSON, 2 for
-        single-quoted, or False/0 for strings.
-
     use_mae : bool
         True to use mean absolute error instead of
         mean squared error during computation of
@@ -233,14 +226,13 @@ def get_coords_using_mlat(
     # Compute coordinates
     results = []
     for i in tqdm(range(len(df_seqs.index))):
-        seq_coords_d = OASAdapterBase.process_single_record(
+        seq_coords_d = SeqAdapterBase.process_single_record(
             df_seqs.iloc[i],
             seq_field=seq_field,
             anchors=anchor_items,
             num_closest_anchors=num_closest_anchors,
             distance_measure_name=distance_measure_name,
             distance_measure_kwargs=distance_measure_kwargs,
-            convert_json=convert_json,
             save_anchor_dists=True,
             use_mae=use_mae
         )
@@ -441,7 +433,6 @@ for num_anchors in num_anchors_list:
         num_closest_anchors=0,  # Use all anchors
         distance_measure_name=distance_measure_name,
         distance_measure_kwargs=distance_measure_kwargs,
-        convert_json=convert_json,
         use_mae=use_mae
     )
 
@@ -473,15 +464,16 @@ plot_data = np.array(plot_data).swapaxes(0, 1)  # type: ignore
 
 # %% Try pure MDS (without anchors/multilateration, for comparison)
 #df_mds_sample = df_seqs_sample.sample(n=int(len(df_seqs_sample) ** 0.5))
-df_dist_matrix = imgt.build_distance_matrix(
-    df=df_seqs_sample,
+# Leave triangle inequality test as tested already
+df_dist_matrix = distance.create_distance_matrix(
+    records=df_seqs_sample,
     distance_function=distance_measure_func,
-    measure_value=seq_field,
-    triangle_inequality_samples=10  # already tested
+    measure_value=seq_field
 )
 
+
 # %% Compute pure MDS results without anchors
-df_mds_coords, df_mds_dist = imgt.compute_coords(
+df_mds_coords, df_mds_dist = anchors.compute_coords(
     df_dist_matrix=df_dist_matrix,
     method=reduction_method,
     random_state=random_state)

@@ -1,9 +1,7 @@
 
 .leaflet-grid-table {
-  height: calc(100vh - 61px); /* Minus header height */
-  /*max-width: calc(100vw - 476px); *//* Minus sidebar */
-  /*width: auto;*/
-  margin:0;
+  height: 100vh;
+  margin: 0;
   padding:0;
 }
 

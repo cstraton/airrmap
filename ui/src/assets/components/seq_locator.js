@@ -1,11 +1,12 @@
 // Sequence locator interface
 
 import React, { useEffect, useState, useRef } from "react"
-import { Container, Form, TextArea, Button } from 'semantic-ui-react'
+import { Button, Container, Form, TextArea, Popup } from 'semantic-ui-react'
 import usePersistedState from "./persisted_state";
+import CONFIG from '../../../config.json';
 //import './css/roi_report.css'
 
-function SequenceLocator({ env_name, setAppStatus, submitCallback}) {
+function SequenceLocator({ env_name, setAppStatus, submitCallback }) {
 
   // State and vars
   const [sequences, setSequences] = usePersistedState('store-seq-locator-sequences', '');
@@ -40,7 +41,14 @@ function SequenceLocator({ env_name, setAppStatus, submitCallback}) {
             />
           </Form.Field>
 
-          <Button onClick={() => handleSubmit()}>Submit</Button>
+          <Popup
+            content={CONFIG.tooltips.sidebar.search.submit}
+            mouseEnterDelay={CONFIG.tooltips.mouseEnterDelay}
+            mouseLeaveDelay={CONFIG.tooltips.mouseLeaveDelay}
+            trigger={
+              <Button onClick={() => handleSubmit()}>Submit</Button>
+            }
+          />
         </Form>
       </Container>
     );

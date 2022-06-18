@@ -10,6 +10,11 @@
   padding: 0;
 }
 
+.default-font-family {
+  /* font-family replicated from Semantic UI (inspect status label css) */
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
 .no-border {
   border: 0 !important;
 }
@@ -28,6 +33,33 @@
 .semantic-checkbox-adjust {
   margin-top: 8px;
   margin-left: 10px;
+}
+
+/* Toolbar */
+
+.toolbar-status-inner {
+  width: 200px;
+  /* Stop label wrapping */
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  /*--------------------*/
+}
+
+.toolbar-top-outer {
+  float: left;
+  position: absolute;
+  left: 50%;
+  background-color: rgba(0,0,0,0);
+  z-index: 8000;
+}
+
+.toolbar-top-inner {
+  float: left;
+  position: relative;
+  left: -50%;
 }
 
 /* For some reason, semantic.min.css sets left to 0, which causes fullscreen not to be centered.

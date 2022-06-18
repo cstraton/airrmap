@@ -1,4 +1,5 @@
 import unittest
+import itertools
 from airrmap.application.reporting import *
 
 
@@ -7,15 +8,15 @@ class TestReporting(unittest.TestCase):
     def test_squeeze_gapped_seqs(self):
 
         seq_gapped_list1 = [
-            ['AAA....AA',1],
+            ['AAA....AA', 1],
             ['AA......A', 1]
         ]
 
         self.assertListEqual(
             squeeze_gapped_seqs(seq_gapped_list1, min_gap_chars=2),
             [
-                ('AAA..AA',1),
-                ('AA....A',1)
+                ('AAA..AA', 1),
+                ('AA....A', 1)
             ],
             'Min gaps should be 2.'
         )
@@ -23,15 +24,15 @@ class TestReporting(unittest.TestCase):
         self.assertListEqual(
             squeeze_gapped_seqs(seq_gapped_list1, min_gap_chars=3),
             [
-                ('AAA...AA',1),
-                ('AA.....A',1)
+                ('AAA...AA', 1),
+                ('AA.....A', 1)
             ],
             'Min gaps should be 3.'
         )
 
         seq_gapped_list2 = [
-            ['AAAAA',1],
-            ['AA..A',1]
+            ['AAAAA', 1],
+            ['AA..A', 1]
         ]
         self.assertListEqual(
             squeeze_gapped_seqs(seq_gapped_list2, min_gap_chars=0),
@@ -169,6 +170,42 @@ class TestReporting(unittest.TestCase):
         # Check record_count
         self.assertEqual(result.data['record_count'], len(
             df_records.index), 'Record count should return correct number of records')
+
+    def test_build_seq_logo(self):
+
+        # Generate test records
+        rec1 = {
+            f"seq_gapped_cdr1": 'AAA...AA',
+            "redundancy": 2
+        }
+        rec2 = {
+            f"seq_gapped_cdr1": 'AA.....A',
+            "redundancy": 4
+        }
+        df_records = pd.DataFrame.from_records([rec1, rec2])
+
+        # Get the logo and metadata
+        result: Dict = build_seq_logo(
+            title='CDR1',
+            gapped_field = 'seq_gapped_cdr1',
+            df_records=df_records,
+            redundancy_field='redundancy'
+        )
+
+        # Expected keys
+        expected_keys = (
+            'seqs_top',
+            'seqs_bottom',
+            'seqs_unique_count',
+            'region_name',
+            'logo_img'
+        )
+
+        # Check dictionary returned
+        self.assertTrue(
+            all(k in result for k in expected_keys),
+            f'Result should contain the following keys: {expected_keys}'
+        )
 
 
 # %%

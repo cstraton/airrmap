@@ -2,10 +2,11 @@
   "name": "airrmap",
   "version": "1.0.0",
   "description": "AIRR Map: An interactive visualisation platform for immune repertoire analytics.",
-  "main": "index.js",
+  "source": "src/index.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "parcel index_react_parcel_example.html --open"
+    "start": "./node_modules/.bin/parcel src/index.html",
+    "build": "./node_modules/.bin/parcel build --no-scope-hoist"
   },
   "author": "",
   "license": "ISC",
@@ -22,8 +23,8 @@
     "plotly.js": "^1.58.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-hook-form": "^7.0.7",
     "react-leaflet": "^3.1.0",
+    "react-loader-spinner": "^5.1.5",
     "react-plotly.js": "^2.5.1",
     "react-semantic-ui-range": "^0.7.1",
     "regenerator-runtime": "^0.13.7",
@@ -33,7 +34,11 @@
     "watchify": "^4.0.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.15.5",
+    "@babel/plugin-proposal-class-properties": "^7.14.5",
+    "@parcel/transformer-image": "^2.6.0",
     "cssnano": "^5.0.5",
+    "parcel": "^2.6.0",
     "parcel-plugin-static-files-copy": "^2.6.0",
     "postcss": "^8.3.0"
   }

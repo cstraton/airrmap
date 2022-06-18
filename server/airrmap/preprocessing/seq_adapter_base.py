@@ -1,10 +1,9 @@
 # Base class containing common functionality
 # for processing the study sequences and
 # computing the coordinates using anchors and multilateration.
-# Can be used to build adapters for other data sources
-# (see oas_adapter_json.py).
+# Can be used to build adapters for other data sources.
 
-# tests -> test_oas_adapter_base.py (wip)
+# tests -> test_seq_adapter_base.py (wip)
 
 # %% Imports
 import hashlib
@@ -36,7 +35,7 @@ class AnchorItem():
     Represents a single anchor sequence item
     """
 
-    def __init__(self, anchor_id: str, seq: Any,
+    def __init__(self, anchor_id: str, data: Any,
                  x: float, y: float):
         """
         Create a new AnchorItem instance.
@@ -46,8 +45,8 @@ class AnchorItem():
         anchor_id : str
             Unique ID of the anchor.
 
-        seq : Any
-            The Sequence representation.
+        data : Dict
+            The full anchor record.
 
         x : float
             The computed x coordinate.
@@ -57,14 +56,14 @@ class AnchorItem():
         """
 
         self.anchor_id = anchor_id
-        self.seq = seq
+        self.data = data
         self.x = x
         self.y = y
 
 
-class OASAdapterBase:
+class SeqAdapterBase:
     """
-    Base class for OAS file adapters.
+    Base class for sequence file adapters.
 
     Adapter classes derived from this should
     implement the following methods:
@@ -132,7 +131,7 @@ class OASAdapterBase:
         return dict(
             sys_file_id=file_id,
             sys_filename=pathlib.Path(fn).name,
-            sys_data_unit_sha1=OASAdapterBase._sha1file(fn),
+            sys_data_unit_sha1=SeqAdapterBase._sha1file(fn),
             sys_processed_utc=datetime.now(timezone.utc).isoformat() + 'Z',
             sys_records=record_count,
             sys_file_size=os.path.getsize(fn),
@@ -183,7 +182,9 @@ class OASAdapterBase:
     def get_distances(item1: Any,
                       items: Dict[int, AnchorItem],
                       measure_function: Callable,
-                      **kwargs) -> OrderedDict:
+                      item1_measure_kwargs: Dict,
+                      items_measure_kwargs: Dict,
+                      env_measure_kwargs: Dict) -> OrderedDict:
         """Measures distance between one item and a number of other items.
 
         TODO: Optimize
@@ -193,7 +194,9 @@ class OASAdapterBase:
             item1: The base item.
             items (dict[int, AnchorItem]): Dictionary of other items to measure distance to.
             measure_function (function): Distance measure function.
-            **kwargs: Additional args for the measure_function (optional).
+            item1_measure_kwargs: item1 record-level arguments for the measure_function.
+            items_measure_kwargs: items record-level arguments for the measure_function.
+            env_measure_kwargs: environment-level arguments for the measure_function.
 
         Returns:
             OrderedDict[int, Any]: List of ids and associated distances, in order of distance.
@@ -203,10 +206,17 @@ class OASAdapterBase:
 
         # Get distance from seq to each anchor
         for item2key, item2 in items.items():
-            dist = measure_function(item1, item2.seq, **kwargs)
+            dist = measure_function(
+                record1=item1,
+                record2=item2.data,
+                record1_kwargs=item1_measure_kwargs,
+                record2_kwargs=items_measure_kwargs,
+                env_kwargs=env_measure_kwargs
+            )
             distances[item2key] = dist
 
-        # Sort in order of ascendng distance
+        # Sort in order of ascending distance
+        # (e.g. required if restricting to n closest anchors)
         ordered_distances: OrderedDict = OrderedDict(
             sorted(
                 distances.items(),
@@ -219,35 +229,18 @@ class OASAdapterBase:
         return ordered_distances
 
     @staticmethod
-    def load_anchors(fn_anchors: str,
-                     seq_column: str = 'aa_annotated',
-                     seq_transform: Callable[[Any], Any] = None,
-                     orderby_column: str = 'anchor_name',
-                     ) -> Dict[int, AnchorItem]:
+    def load_anchors(fn_anchors: str) -> Dict[int, AnchorItem]:
         """
         Load anchors sequences.
 
         Format of sequences should match those that will be compared
-        with OAS.
-
-        NOTE! seq_column and orderby_column should not be provided
-        by unauthorised users as potential for sql injection. Currently appear
-        unable to provide field names as parameterised query for SQLite.
+        with the study sequence records.
 
         Parameters
         ----------
         fn_anchors : str
              Db containing the translated anchor records (reads from
-             anchor_records table).
-
-        seq_column : str, optional
-            Column containing the representation of the sequence, by default 'aa_annotated'.
-
-        seq_transform: Callable[Any], optional
-            A function that transforms the value in seq_column, by default None.
-
-        orderby_column : str, optional
-            Column to order by, by default 'anchor_name'.
+             anchor_records and anchor_coords table).
 
         Returns
         -------
@@ -258,23 +251,20 @@ class OASAdapterBase:
         -------
         ```
         load_anchors('anchors.db')
-        > {'anchor1': AnchorItem(anchor_id=1, seq={'cdrh1': {'1': 'A' ...}}, x=0.12, y=1.23)}
+        > {'anchor1': AnchorItem(anchor_id=1, data={'field1': {'cdrh1': {'1': 'A' ...}}}, x=0.12, y=1.23)}
         ```
         """
 
-        # Init
-        seq_column = sqlescapy.sqlescape(seq_column)
-        orderby_column = sqlescapy.sqlescape(orderby_column)
-
+        # Load data
+        # _sys_ just for loading into AnchorItem instance
         sql = f"""
-            SELECT rec.anchor_id AS anchor_id,
-                   rec.{seq_column} AS seq,
-                   coord.x AS x,
-                   coord.y AS y
+            SELECT rec.anchor_id AS _sys_anchor_id,
+                   rec.*,
+                   coord.x AS _sys_x,
+                   coord.y AS _sys_y
             FROM anchor_records AS rec
             LEFT JOIN anchor_coords AS coord
             ON rec.anchor_id = coord.anchor_id
-            ORDER BY rec.{orderby_column}
         """
 
         # Load anchor sequences
@@ -284,24 +274,21 @@ class OASAdapterBase:
                 con=conn
             )
 
-        # Transform and place in dictionary (AnchorItem)
-        transform_fn: Callable = \
-            seq_transform if seq_transform is not None else lambda x: x
+        # Convert to list of dictionaries
+        # (one per row)
+        anchor_list = df_anchors.to_dict('records')
 
-        anchors = {
-            anchor_id: AnchorItem(
+        # Load into AnchorItem objects
+        anchors = {}
+        for anchor_d in anchor_list:
+            anchor_id = anchor_d['_sys_anchor_id']
+            anchor_item = AnchorItem(
                 anchor_id=anchor_id,
-                seq=transform_fn(seq),
-                x=x,
-                y=y
+                data=anchor_d,
+                x=anchor_d['_sys_x'],
+                y=anchor_d['_sys_y']
             )
-            for anchor_id, seq, x, y in
-            zip(list(df_anchors['anchor_id']),
-                list(df_anchors['seq']),
-                list(df_anchors['x']),
-                list(df_anchors['y'])
-                )
-        }
+            anchors[anchor_id] = anchor_item
 
         # Return
         return anchors
@@ -339,7 +326,7 @@ class OASAdapterBase:
 
         The distance from a sequence to each anchor must be computed for
         the distance matrix, resulting in large data sizes.
-        For example, 357,000 OAS sequences * 300 anchor sequences =
+        For example, 357,000 study sequences * 300 anchor sequences =
         ~107 million records, for just one Data Unit. Therefore, we
         use binary encoding and compression to reduce the size.
         The resulting bytes can be stored in a db BLOB field.
@@ -535,9 +522,7 @@ class OASAdapterBase:
         #  ^^ Perf: 1.92 ms
 
     @staticmethod
-    def prepare(fn, seq_row_start: int, fn_anchors,
-                anchor_seq_field='aa_annotated',
-                anchor_convert_json: Any = False):
+    def prepare(fn, seq_row_start: int, fn_anchors):
         """
         Prepare for processing a file.
 
@@ -558,15 +543,6 @@ class OASAdapterBase:
         fn_anchors : str or file-like
             The database/file containing the processed anchors.
 
-        anchor_seq_field: str
-            Field in the anchor file containing the sequence to be
-            measured.
-
-        anchor_convert_json : bool or int, optional
-            False or 0 if seq_field does not contain json values.
-            1 if seq_field contains single-quoted json values.
-            True or 2 if seq_field contains double-quoted json values.
-
         Returns
         -------
         Dict
@@ -574,8 +550,6 @@ class OASAdapterBase:
 
             record_count: Number of records in the data unit file, or
                 zero if 'fn' is None.
-
-            openfunc: The open function to read the file with (e.g. gzip.open)
 
             anchors: Dictionary of AnchorItems loaded from the anchor db.
                 Key=anchor_id, Value=AnchorItem().
@@ -596,85 +570,29 @@ class OASAdapterBase:
         else:
             record_count = 0
 
-        # Get transform for anchor sequence
-        anchor_seq_transform: Any
-        if anchor_convert_json == False:
-            anchor_seq_transform = None
-        elif anchor_convert_json == True:
-            anchor_seq_transform = json.loads
-        elif anchor_convert_json == JSON_SINGLE_QUOTE:
-            anchor_seq_transform = ast.literal_eval
-        else:
-            raise ValueError(
-                f'Unexpected value for anchor_convert_json: {anchor_convert_json}')
-
         # Load anchors
-        anchors: Dict[int, AnchorItem] = OASAdapterBase.load_anchors(
-            fn_anchors=fn_anchors,
-            seq_column=anchor_seq_field,
-            seq_transform=anchor_seq_transform
+        anchors: Dict[int, AnchorItem] = SeqAdapterBase.load_anchors(
+            fn_anchors=fn_anchors
         )
 
         # Get sha1 of the anchors daabase
-        anchors_file_sha1 = OASAdapterBase._sha1file(fn_anchors)
+        anchors_file_sha1 = SeqAdapterBase._sha1file(fn_anchors)
 
         # Return config
         return dict(
             record_count=record_count,
-            openfunc=openfunc,
             anchors=anchors,
             anchors_file_sha1=anchors_file_sha1
         )
 
     @staticmethod
-    def load_seq_value(x, convert_json):
-        """
-        Transform a sequence value according to the convert_json setting.
-
-        Parameters
-        ----------
-        x : Any
-            A string or JSON numbered sequence.
-
-        convert_json : bool or int.
-            False or 0 if x does not contain json values.
-            True or 1 if x contains double-quoted json values.
-            2 if x contains single-quoted json values.
-
-        Returns
-        -------
-        Dict or str:
-            A dictionary if value was JSON, otherwise the original string.
-
-        Raises
-        ------
-        ValueError
-            If unexpected value for convert_json.
-        """
-
-        JSON_SINGLE_QUOTE = 2
-
-        seq: Any
-        if convert_json == False:
-            seq = x
-        elif convert_json == True:
-            seq = json.loads(x)
-        elif convert_json == JSON_SINGLE_QUOTE:
-            seq = ast.literal_eval(x)
-        else:
-            raise ValueError(
-                f'Unexpected value for convert_json: {convert_json}')
-
-        return seq
-
-    @staticmethod
     def process_single_record(row,
-                              seq_field: str,
                               anchors: Dict[int, AnchorItem],
                               num_closest_anchors: int,
                               distance_measure_name: str,
-                              distance_measure_kwargs: dict,
-                              convert_json: Any = False,
+                              distance_measure_env_kwargs: Dict,
+                              distance_measure_seq_kwargs: Dict,
+                              distance_measure_anchor_kwargs: Dict,
                               save_anchor_dists: bool = True,
                               anchor_dist_compression: str = 'zlib',
                               anchor_dist_compression_level: int = 9,
@@ -690,9 +608,6 @@ class OASAdapterBase:
         row : Series or dict-like
             The record containing the sequence.
 
-        seq_field : str
-            The field in the row containing the sequence representation.
-
         anchors : Dict[int, AnchorItem]
             Dictionary of AnchorItem instances. Key=anchor_id (int).
 
@@ -703,14 +618,17 @@ class OASAdapterBase:
         distance_measure_name : str
             Name of the distance measure to use.
 
-        distance_measure_kwargs : dict
-            Additional keyword arguments required by the 
+        distance_measure_env_kwargs : Dict
+            Environment-level arguments required for the
             selected distance measure.
 
-        convert_json : bool or int, optional
-            False or 0 if seq_field does not contain json values.
-            True or 1 if seq_field contains double-quoted json values.
-            2 if seq_field contains single-quoted json values.
+        distance_measure_seq_kwargs: Dict
+            Record-level arguments for the sequence records,
+            required for the selected distance measure.
+
+        distance_measure_anchor_kwargs : dict
+            Record-level arguments for the anchor records,
+            required for the selected distance measure.
 
         save_anchor_dists : bool, optional
             True to include the binary-encoded anchor distances in the
@@ -744,27 +662,21 @@ class OASAdapterBase:
 
         # Get codec (~14 µs)
         if save_anchor_dists:
-            anchor_dist_codec = OASAdapterBase.anchor_dist_codec(
+            anchor_dist_codec = SeqAdapterBase.anchor_dist_codec(
                 size=len(anchors))
 
-        # Get (and transform) the sequence from the DataFrame row.
-        # Convert from JSON if required.
-        seq: Any
-        seq = OASAdapterBase.load_seq_value(
-            x=row[seq_field],
-            convert_json=convert_json
-        )
-
         # Get distance between sequence and all anchor sequences
-        ordered_anchor_dists: OrderedDict[int, Any] = OASAdapterBase.get_distances(
-            item1=seq,
+        ordered_anchor_dists: OrderedDict[int, Any] = SeqAdapterBase.get_distances(
+            item1=row,
             items=anchors,
             measure_function=distance_measure_fn,
-            **distance_measure_kwargs
+            item1_measure_kwargs=distance_measure_seq_kwargs,
+            items_measure_kwargs=distance_measure_anchor_kwargs,
+            env_measure_kwargs=distance_measure_env_kwargs
         )
 
         # Compute the coordinates
-        seq_coords: Dict = OASAdapterBase.compute_sequence_coords(
+        seq_coords: Dict = SeqAdapterBase.compute_sequence_coords(
             anchor_dists=ordered_anchor_dists,
             anchors=anchors,
             num_closest_anchors=num_closest_anchors,
@@ -773,7 +685,7 @@ class OASAdapterBase:
 
         # Binary-encode distances and compress
         if save_anchor_dists:
-            anchor_dist_bytes = OASAdapterBase.anchor_dist_encode(
+            anchor_dist_bytes = SeqAdapterBase.anchor_dist_encode(
                 anchor_dists=ordered_anchor_dists,
                 codec=anchor_dist_codec,
                 compression_level=anchor_dist_compression_level,

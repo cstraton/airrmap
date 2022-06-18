@@ -12,8 +12,8 @@ repo, cfg = ah.get_repo_cfg()
 query = RepoQuery('ENV_NAME',
                   value1_field='redundancy',
                   value2_field='cdr3',
-                  facet_col='file.Longitudinal',
-                  facet_row='file.Subject'
+                  facet_col='f.Longitudinal',
+                  facet_row='f.Subject'
                   )
 
 # %% Get data

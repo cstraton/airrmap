@@ -17,16 +17,23 @@
 
 /* Label shown on bottom of map */
 .map-label {
+  /* font-family replicated from Semantic UI (inspect status label css) */
+  font-family: 'Lato', 'Helvetica Neue', Arial, Helvetica, sans-serif;
   width: 100%;
-  /*background-color:rgba(255, 255, 255, 0.4);*/
-  background-color:rgba(100, 100, 100, 1.0);
-  /*color: rgb(0,0,0);*/
-  color: rgb(255, 255, 255);
+  background-color: rgba(255, 255, 255, 0.9); /* white */
+  color: rgba(100, 100, 100, 1);
+
+  /* Stop label wrapping */
+  display: inline-block;
+  white-space: nowrap;
+  /*--------------------*/
+
   text-align: center;
   position: absolute;
   padding-top: 2px;
   padding-bottom: 2px;
   bottom: 0px;
+  user-select: none; /* stop label highlighting during region select */
   /*opacity: 0.4*/;
   z-index: 1000;
 }
@@ -43,7 +50,7 @@
 /* stats */
 .map-stats {
   position: absolute;
-  top: 23px; /* Should be enough to clear graticule numbers if grid is shown */
+  top: 48px; /* Should be enough to clear graticule numbers if grid and toolbar is shown */
   right: 6px;
   text-align: right;
   font-size: 11.5px;
@@ -52,13 +59,12 @@
 }
   
 .leaflet-container-light {
-  background: rgb(255, 255, 255)
+  background: white;
 }
 
 .leaflet-container-dark {
   background: rgb(0, 0, 0)
 }
-
 
 /* Marker tooltips and labels */
 /* REF: https://gis.stackexchange.com/questions/212820/overriding-leaflet-tooltip-style */

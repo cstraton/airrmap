@@ -1,3 +1,39 @@
 {
-    "baseUrl": "http://localhost:5000/"
+    "baseUrl": "http://localhost:5000/",
+    "mapItem": {
+        "animateMove": false,
+        "zoom": {
+            "smoothSensitivity": 2.0
+        }
+    },
+    "tooltips": {
+        "mouseEnterDelay": 800,
+        "mouseLeaveDelay": 1,
+        "sidebar": {
+            "data": {
+                "submit": "Load the environment and/or apply facet and filter settings.",
+                "filterSingleRemove": "Remove this filter.",
+                "filterSingleAdd": "Add a filter.",
+                "filterAllRemove": "Remove all filters."
+            },
+            "rendering": {
+                "heatmap": {},
+                "kde": {}
+            },
+            "selection": {},
+            "search": {
+                "submit": "Compute the location of these sequences on the map."
+            }
+        },
+        "toolbar": {
+            "sidebar": "Toggle the sidebar.",
+            "sync": "Toggle synchronised navigation and selections. If enabled, reports will include all subplots, otherwise only the selected subplot will be included.",
+            "grid": "Toggle the grid layer.",
+            "stats": "Toggle the statistics layer.",
+            "selectDraw": "Toggle draw mode. Hold the mouse button to draw a selection and release at any point to finish. Click inside the area to load a report.",
+            "selectUndo": "Undo the last selection.",
+            "selectRemoveAll": "Remove all selections.",
+            "report": "Show the last report."
+        }
+    }
 }

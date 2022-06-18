@@ -4,3 +4,4 @@
 **/.cache
 keys.json
 **/semantic
+.parcel-cache

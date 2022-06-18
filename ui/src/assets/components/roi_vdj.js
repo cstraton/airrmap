@@ -46,7 +46,7 @@ export default function ROIVDJ({ report, section_name, facetRowValues, facetColV
       subplotIndex++;
       const item = {
         key: rowValue.toString() + keyDelim + colValue.toString(),
-        name: rowValue.toString() + ', ' + colValue.toString(),
+        name: rowValue.toString() + '<br />' + colValue.toString(),
         subplotIndex: subplotIndex,
         facetRowIndex: facetRowIndex,
         facetColIndex: facetColIndex,
@@ -126,7 +126,7 @@ export default function ROIVDJ({ report, section_name, facetRowValues, facetColV
       x: 0.5,
       xref: facetItem['xref'],
       yref: facetItem['yref'],
-      y: 1.05,
+      y: 1.2,
     }
 
     // Store
@@ -152,7 +152,7 @@ export default function ROIVDJ({ report, section_name, facetRowValues, facetColV
     //autosize: true,
     //width: 1500,
     //height: 800,
-    title: reportTitle,
+    //title: reportTitle,
     xaxis: {
       type: 'category',
       title: ''
@@ -164,7 +164,8 @@ export default function ROIVDJ({ report, section_name, facetRowValues, facetColV
       roworder: 'top to bottom',
       pattern: 'independent' // coupled doesn't appear to work?
     },
-    annotations: annotationItems
+    annotations: annotationItems,
+    showlegend: false // hide right interactive legend
   };
 
   // Config
@@ -180,6 +181,7 @@ export default function ROIVDJ({ report, section_name, facetRowValues, facetColV
       data={traceItems}
       layout={layout}
       useResizeHandler={true}
+      // style: see also roi_report.css
       style={{ width: "100%", height: "100%" }}
     />
   )
